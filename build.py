@@ -2,7 +2,7 @@
 Результат: index.html (повна сторінка) і, якщо передано шлях, фрагмент для артефакта."""
 import re, sys, pathlib
 root = pathlib.Path(__file__).parent
-src = (root / "src/lesson.html").read_text(encoding="utf-8")
+src = (root / "src/lesson.html").read_text(encoding="utf-8").replace("/*%%BASECSS%%*/", (root / "src/base.css").read_text(encoding="utf-8"))
 logos = dict(re.findall(r'export const (\w+) = "([^"]+)"', (root / "src/logos.js").read_text()))
 for key, name in {"LOGO": "LOGO_WORDMARK", "WAVE": "MARK_GREEN_WAVE", "SPIRAL": "MARK_PURPLE_SPIRAL", "FEATHER": "MARK_YELLOW_FEATHER"}.items():
     src = src.replace(f"%%{key}%%", logos[name])
