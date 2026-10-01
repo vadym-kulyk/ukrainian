@@ -2,15 +2,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800;900&family=Manrope:wght@400;500;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* Layout: одна колонка уроку з бенто-сітками всередині; липка панель етапів + таймер 40 хв зверху. */
+/* Layout: липка «стрічка уроку» (етапи + таймер + прогрес) і стрічка секцій,
+   кожна зі своїм «матеріалом»: наліпки, темна галерея, папір у клітинку, зошит у лінійку, телефони, справи груп. */
 :root{
   --lime:#99cc00; --violet:#9d6bdb; --yellow:#f7c915;
   --wrong:#c13f2c; --right:#3f7a16;
   --bg:#ffffff; --surface:#faf8fc; --surface-2:#f1ecf7; --line:#e5e0ee;
-  --text:#1e1b26; --muted:color-mix(in srgb,var(--text) 62%,transparent);
-  --ink:#1e1b26; /* текст на яскравих плашках — завжди темний */
-  --glass:color-mix(in srgb,var(--bg) 78%,transparent);
-  --shadow:0 1px 0 var(--line),0 18px 40px -24px color-mix(in srgb,var(--violet) 45%,transparent);
+  --text:#1e1b26; --muted:color-mix(in srgb,var(--text) 64%,transparent);
+  --ink:#1e1b26; --paper:#fffdf6; --rule:#cfe0f5; --margin:#f0a3a3;
+  --night:#1e1b26; --night-2:#2a2536; --night-text:#f4f1f9;
+  --glass:color-mix(in srgb,var(--bg) 82%,transparent);
   --f-display:'Unbounded','Rubik',system-ui,sans-serif;
   --f-text:'Manrope','PT Sans','Fira Sans',system-ui,sans-serif;
   --f-mono:'JetBrains Mono','PT Mono',ui-monospace,monospace;
@@ -18,226 +19,304 @@
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#12101a; --surface:#1b1826; --surface-2:#231f33; --line:#332d44; --text:#f4f1f9;
-  --wrong:#ff7a5e; --right:#a5d914; color-scheme:dark;
-  --shadow:0 1px 0 var(--line),0 18px 40px -24px #000;
+  --wrong:#ff7a5e; --right:#a5d914; --paper:#1b1826; --rule:#2b3550; --margin:#6b3640;
+  --night:#0b0a10; --night-2:#1b1826; color-scheme:dark;
 }}
 :root[data-theme="dark"]{
   --bg:#12101a; --surface:#1b1826; --surface-2:#231f33; --line:#332d44; --text:#f4f1f9;
-  --wrong:#ff7a5e; --right:#a5d914; color-scheme:dark;
-  --shadow:0 1px 0 var(--line),0 18px 40px -24px #000;
+  --wrong:#ff7a5e; --right:#a5d914; --paper:#1b1826; --rule:#2b3550; --margin:#6b3640;
+  --night:#0b0a10; --night-2:#1b1826; color-scheme:dark;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:84px}
+html{scroll-behavior:smooth;scroll-padding-top:120px}
 body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f-text);font-size:17px;line-height:1.6;overflow-x:hidden}
 h1,h2,h3{font-family:var(--f-display);line-height:1.12;letter-spacing:-.01em;text-wrap:balance;margin:0}
-h2{font-size:clamp(26px,4.4vw,42px);font-weight:800}
-h3{font-size:19px;font-weight:700}
+h2{font-size:clamp(26px,4.4vw,44px);font-weight:800}
+h3{font-size:18px;font-weight:700}
 p{margin:0}
 a{color:inherit}
+img{max-width:100%}
+button{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--violet);outline-offset:3px;border-radius:6px}
 .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
-.wrap{max-width:1120px;margin:0 auto;padding-inline:20px}
-.col{max-width:68ch}
+.wrap{max-width:1160px;margin:0 auto;padding-inline:20px}
+.col{max-width:66ch}
 .muted{color:var(--muted)}
-.stack{display:grid;gap:14px}
 
-/* ---- Липка панель уроку ---- */
-.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--glass);backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);border-bottom:1px solid var(--line)}
-.bar-in{display:flex;align-items:center;gap:14px;padding-block:10px}
-.bar-logo{font-family:var(--f-display);font-weight:900;font-size:15px;letter-spacing:.02em;white-space:nowrap}
-.bar-logo b{background:var(--lime);color:var(--ink);padding:2px 8px;border-radius:8px;margin-left:4px}
-.stages{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
-.stages::-webkit-scrollbar{display:none}
-.stages a{flex:none;text-decoration:none;font-size:13px;font-weight:700;padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);white-space:nowrap}
-.stages a .mono{font-size:11px;color:var(--muted);margin-right:5px}
-.stages a.on{background:var(--lime);color:var(--ink);border-color:var(--lime)}
-.stages a.on .mono{color:var(--ink)}
-.timer{display:flex;align-items:center;gap:8px;flex:none}
-.timer output{font-family:var(--f-mono);font-weight:600;font-size:15px;min-width:5ch;text-align:right}
-.progress{height:4px;background:var(--line)}
-.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--lime),var(--yellow),var(--violet));transition:width .6s}
+/* ---------- Стрічка уроку ---------- */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--glass);backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);border-bottom:1px solid var(--line)}
+.bar-top{display:flex;align-items:center;gap:12px;padding-block:8px}
+.brand{font-family:var(--f-display);font-weight:900;font-size:14px;white-space:nowrap}
+.brand b{background:var(--lime);color:var(--ink);padding:2px 7px;border-radius:7px;margin-left:4px}
+.done-pill{font-family:var(--f-mono);font-size:12.5px;font-weight:600;padding:5px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);white-space:nowrap}
+.done-pill b{color:var(--right)}
+.spacer{flex:1}
+.now-lbl{font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.clock{font-family:var(--f-mono);font-weight:600;font-size:16px;min-width:5ch;text-align:right}
+.steps{display:flex;gap:4px;padding-bottom:9px;list-style:none;margin:0;padding-left:0}
+.steps li{min-width:0}
+.steps a{display:block;text-decoration:none;min-width:0}
+.seg{display:block;height:10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden;position:relative}
+.seg i{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,var(--lime),var(--yellow));transition:width .8s}
+.steps li.now .seg{box-shadow:0 0 0 2px var(--violet)}
+.steps small{display:flex;gap:4px;align-items:center;font-size:11px;font-weight:700;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.steps li.now small{color:var(--text)}
+.steps li.ok small::before{content:"✓";color:var(--right);font-weight:900}
+.scrollbar{height:3px;background:transparent}
+.scrollbar i{display:block;height:100%;width:0;background:var(--violet)}
 
-.btn{font:inherit;font-weight:800;font-size:14px;border:0;cursor:pointer;border-radius:999px;padding:10px 18px;background:var(--lime);color:var(--ink);display:inline-flex;align-items:center;gap:8px;text-decoration:none;transition:transform .15s,box-shadow .15s}
+.btn{font-weight:800;font-size:14px;border:0;cursor:pointer;border-radius:999px;padding:9px 16px;background:var(--lime);color:var(--ink);display:inline-flex;align-items:center;gap:8px;text-decoration:none;transition:transform .15s,box-shadow .15s;white-space:nowrap}
 .btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px -10px var(--lime)}
 .btn.ghost{background:transparent;color:var(--text);border:1.5px solid var(--line)}
 .btn.violet{background:var(--violet);color:#fff}
-.btn.sm{padding:7px 13px;font-size:13px}
+.btn.sm{padding:6px 12px;font-size:13px}
 
-/* ---- Hero ---- */
-.hero{position:relative;overflow:hidden;padding-block:56px 40px}
+/* ---------- Hero ---------- */
+.hero{position:relative;overflow:hidden;padding-block:48px 34px}
 .mark{position:absolute;pointer-events:none;user-select:none;opacity:.12;z-index:0}
-.mark.r{right:-16%;top:-4%;width:46%;max-width:560px}
-.mark.l{left:-18%;bottom:-20%;width:38%;max-width:460px;opacity:.1}
+.mark.r{right:-15%;top:-6%;width:44%;max-width:540px}
+.mark.l{left:-18%;bottom:-24%;width:36%;max-width:440px;opacity:.1}
 .hero .wrap{position:relative;z-index:1}
-.logo{display:block;width:clamp(132px,22vw,180px);height:auto;margin-bottom:28px}
-.hero h1{font-size:clamp(40px,8.2vw,96px);font-weight:900;line-height:.98;letter-spacing:-.025em}
-.hero h1 .hl{background:var(--lime);color:var(--ink);padding:0 .14em;border-radius:.16em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
-.hero h1 .out{color:transparent;-webkit-text-stroke:2px var(--text)}
-.hero-lead{font-size:clamp(17px,2vw,20px);margin-top:22px;max-width:56ch}
+.logo{display:block;width:clamp(132px,22vw,180px);height:auto;margin-bottom:26px}
+.hero h1{font-size:clamp(40px,8.4vw,98px);font-weight:900;line-height:.98;letter-spacing:-.025em}
+.hl{background:var(--lime);color:var(--ink);padding:0 .14em;border-radius:.16em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.out{color:transparent;-webkit-text-stroke:2px var(--text)}
+.lead{font-size:clamp(17px,2vw,20px);margin-top:20px;max-width:58ch}
 .sticker{display:inline-block;font-family:var(--f-display);font-weight:800;font-size:13px;padding:7px 13px;border-radius:10px;color:var(--ink);transform:rotate(-3deg);box-shadow:3px 3px 0 var(--text)}
 .sticker.y{background:var(--yellow)}.sticker.v{background:var(--violet);color:#fff}.sticker.g{background:var(--lime)}
-.hero-tags{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:22px}
-.hero-tags .sticker:nth-child(2){transform:rotate(2deg)}
-.meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:34px}
-.meta div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px 16px}
+.tags{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:22px}
+.tags .sticker:nth-child(2){transform:rotate(2deg)}
+.meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:30px}
+.meta div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 16px}
 .meta small{display:block;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .meta strong{font-family:var(--f-display);font-size:16px}
+.tip{margin-top:16px;font-size:14px;color:var(--muted)}
+.tip b{color:var(--text)}
 
-/* ---- Бігучий рядок ---- */
-.ticker{background:var(--text);color:var(--bg);overflow:hidden;padding-block:12px;border-block:3px solid var(--lime);transform:rotate(-1deg);margin-block:8px 30px}
-.ticker-track{display:flex;gap:40px;width:max-content;animation:run 38s linear infinite;font-family:var(--f-display);font-weight:800;font-size:18px;white-space:nowrap}
+.ticker{background:var(--text);color:var(--bg);overflow:hidden;padding-block:11px;border-block:3px solid var(--lime);transform:rotate(-1deg);margin-block:6px 10px}
+.ticker-track{display:flex;gap:40px;width:max-content;animation:run 40s linear infinite;font-family:var(--f-display);font-weight:800;font-size:17px;white-space:nowrap}
 .ticker-track span::after{content:"✦";color:var(--lime);margin-left:40px}
 @keyframes run{to{transform:translateX(-50%)}}
 
-/* ---- Секції ---- */
-section.sec{padding-block:44px;position:relative}
-.sec-head{display:flex;gap:16px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:24px}
+/* ---------- Секції та «матеріали» ---------- */
+section.sec{padding-block:52px;position:relative}
+.sec-head{display:flex;gap:16px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:22px}
 .eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.eyebrow .min{background:var(--surface-2);border:1px solid var(--line);color:var(--text);padding:3px 9px;border-radius:999px}
+.min{background:var(--surface-2);border:1px solid var(--line);color:var(--text);padding:3px 9px;border-radius:999px}
 .subj{display:inline-flex;gap:6px}
-.subj i{font-style:normal;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;color:var(--ink)}
+.subj i{font-style:normal;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;color:var(--ink);letter-spacing:.02em}
 .subj .m{background:var(--lime)}.subj .lt{background:var(--yellow)}.subj .h{background:var(--violet);color:#fff}
+.score{font-family:var(--f-mono);font-weight:600;background:var(--text);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:14px;white-space:nowrap}
+.teacher{margin-top:18px;font-size:14px;border-left:3px solid var(--violet);padding:4px 0 4px 12px;color:var(--muted);max-width:80ch}
+.teacher b{color:var(--text)}
+.task-n{font-family:var(--f-display);font-weight:900;font-size:13px;background:var(--text);color:var(--bg);border-radius:8px;padding:4px 10px;display:inline-block}
 
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:22px;min-width:0}
+.band-yellow{background:color-mix(in srgb,var(--yellow) 26%,var(--bg))}
+.band-lime{background:color-mix(in srgb,var(--lime) 20%,var(--bg))}
+.band-violet{background:color-mix(in srgb,var(--violet) 22%,var(--bg))}
+.band-night{background:var(--night);color:var(--night-text)}
+.band-night .eyebrow,.band-night .muted{color:color-mix(in srgb,var(--night-text) 66%,transparent)}
+.band-night .min{background:var(--night-2);border-color:#3a3448;color:var(--night-text)}
+.band-night .score{background:var(--night-text);color:var(--night)}
+.band-night .teacher{color:color-mix(in srgb,var(--night-text) 70%,transparent)}
+.band-night .teacher b{color:var(--night-text)}
+.grid-paper{background-color:var(--paper);background-image:linear-gradient(var(--rule) 1px,transparent 1px),linear-gradient(90deg,var(--rule) 1px,transparent 1px);background-size:26px 26px}
+.notebook{background-color:var(--paper);background-image:linear-gradient(90deg,transparent 46px,var(--margin) 46px,var(--margin) 48px,transparent 48px),repeating-linear-gradient(var(--paper) 0 31px,var(--rule) 31px 32px)}
+
+/* Зображення мемів: завжди повністю видно, клік — на весь екран */
+.pic{display:block;width:100%;background:#0f0d14;border:0;padding:0;cursor:zoom-in;position:relative;overflow:hidden}
+.pic img{display:block;width:100%;height:100%;object-fit:contain}
+.pic::after{content:"⤢";position:absolute;right:8px;bottom:8px;width:28px;height:28px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff;font-size:15px;display:grid;place-items:center;opacity:0;transition:opacity .15s}
+.pic:hover::after,.pic:focus-visible::after{opacity:1}
+
+/* 1. Розминка: наліпки-голосування */
+.moods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.mood{background:var(--bg);border:2px solid var(--text);border-radius:16px;padding:8px 8px 12px;cursor:pointer;text-align:left;display:grid;gap:8px;box-shadow:5px 5px 0 var(--text);transition:transform .15s}
+.mood:nth-child(odd){transform:rotate(-1.5deg)}.mood:nth-child(even){transform:rotate(1.2deg)}
+.mood:hover{transform:rotate(0) translateY(-3px)}
+.mood .ph{aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:#0f0d14}
+.mood .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.mood b{font-family:var(--f-display);font-size:14px;line-height:1.25;padding-inline:4px}
+.mood span{font-size:13px;color:var(--muted);padding-inline:4px}
+.votes{position:absolute;top:-12px;right:-10px;min-width:36px;height:36px;border-radius:999px;background:var(--violet);color:#fff;font-family:var(--f-mono);font-weight:600;display:grid;place-items:center;padding-inline:8px;border:2px solid var(--text)}
+.mood{position:relative}
+.mood .votes[hidden]{display:none}
+
+/* 2. Теорія */
 .bento{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;min-width:0}
 .s2{grid-column:span 2}.s3{grid-column:span 3}.s4{grid-column:span 4}.s6{grid-column:span 6}
 .card.lime{background:var(--lime);color:var(--ink);border-color:transparent}
 .card.violet{background:var(--violet);color:#fff;border-color:transparent}
-.card.yellow{background:var(--yellow);color:var(--ink);border-color:transparent}
-.card.lime .muted,.card.yellow .muted{color:color-mix(in srgb,var(--ink) 70%,transparent)}
 .big{font-family:var(--f-display);font-weight:900;font-size:clamp(44px,6vw,72px);line-height:1}
-.card h3{margin-bottom:8px}
-.list{margin:0;padding-left:20px;display:grid;gap:6px}
-.task{border:2px solid var(--text);box-shadow:6px 6px 0 var(--lime);background:var(--bg)}
-.task-n{font-family:var(--f-display);font-weight:900;font-size:14px;background:var(--text);color:var(--bg);border-radius:8px;padding:4px 10px;display:inline-block;margin-bottom:12px}
-.teacher{margin-top:14px;font-size:14px;border-left:3px solid var(--violet);padding:4px 0 4px 12px;color:var(--muted)}
-.teacher b{color:var(--text)}
+.anat{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:14px;align-items:center}
+.anat .arrow{font-family:var(--f-display);font-size:32px;font-weight:900;color:var(--violet)}
+.fig{display:grid;gap:8px;min-width:0}
+.fig .pic{aspect-ratio:4/3;border-radius:14px}
+.fig figcaption,.fig p.cap{font-size:14px;color:var(--muted)}
+.fig b.lab{font-family:var(--f-mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text)}
+.forms{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.forms .fig{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:10px}
+.forms .fig .pic{border-radius:10px}
+.form-tag{display:inline-block;font-family:var(--f-display);font-size:12px;font-weight:800;background:var(--yellow);color:var(--ink);padding:3px 9px;border-radius:7px}
 
-/* Флип-картки розминки */
-.flips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-.flip{perspective:900px;border:0;padding:0;background:none;cursor:pointer;font:inherit;color:inherit;text-align:left;min-height:190px}
-.flip-in{position:relative;height:100%;min-height:190px;transition:transform .55s;transform-style:preserve-3d}
-.flip.open .flip-in{transform:rotateY(180deg)}
-.flip-f,.flip-b{position:absolute;inset:0;border-radius:var(--r);padding:20px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;justify-content:space-between}
-.flip-f{background:var(--surface);border:2px dashed var(--line)}
-.flip-b{background:var(--violet);color:#fff;transform:rotateY(180deg)}
-.flip:nth-child(2) .flip-b{background:var(--yellow);color:var(--ink)}
-.flip:nth-child(3) .flip-b{background:var(--lime);color:var(--ink)}
-.clues{display:flex;flex-wrap:wrap;gap:6px}
-.clues span{font-family:var(--f-display);font-weight:700;font-size:15px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:5px 10px}
-.flip small{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
-.flip-b small{color:inherit;opacity:.8}
-.flip-b strong{font-family:var(--f-display);font-size:18px;line-height:1.2}
+.evo{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,1fr);gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:12px}
+.evo article{scroll-snap-align:start;background:var(--night-2);border:1px solid #3a3448;border-radius:18px;padding:10px;display:grid;gap:10px;align-content:start;min-width:0}
+.evo .pic{aspect-ratio:1;border-radius:12px}
+.evo .yr{font-family:var(--f-display);font-weight:900;font-size:28px;color:var(--lime);line-height:1}
+.evo h3{font-size:15px;color:var(--night-text)}
+.evo p{font-size:13.5px;color:color-mix(in srgb,var(--night-text) 72%,transparent)}
+.roots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:20px}
+.roots div{border:1px dashed #4a4360;border-radius:14px;padding:14px}
+.roots b{font-family:var(--f-display);color:var(--yellow);font-size:20px;display:block}
+.roots p{font-size:14px;color:color-mix(in srgb,var(--night-text) 76%,transparent)}
 
-/* Таймлайн історії */
-.timeline{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;position:relative}
-.tl{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:16px;position:relative;min-width:0}
-.tl .yr{font-family:var(--f-display);font-weight:900;font-size:26px;display:block;margin-bottom:4px}
-.tl:nth-child(1) .yr{color:var(--violet)}.tl:nth-child(3) .yr{color:var(--violet)}
-.tl p{font-size:14.5px}
-.tl .tag{font-family:var(--f-mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-top:8px}
-
-/* Мем-картки (фото-меми) */
-.memes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
-.meme{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;min-width:0}
-.meme-pic{aspect-ratio:4/3;max-width:100%;position:relative;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:14px;text-align:center;color:#fff;overflow:hidden}
-.meme-pic .cap{font-family:var(--f-display);font-weight:900;font-size:clamp(15px,1.9vw,19px);line-height:1.1;text-transform:uppercase;text-shadow:2px 2px 0 #000,-2px 2px 0 #000,2px -2px 0 #000,-2px -2px 0 #000;position:relative;z-index:1}
-.meme-pic .scene{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;font-family:var(--f-mono);color:rgba(255,255,255,.85);padding:56px 18px;text-align:center;line-height:1.4}
-.meme-pic .scene em{font-style:normal;background:rgba(0,0,0,.35);padding:6px 10px;border-radius:8px}
-.p1{background:radial-gradient(circle at 30% 30%,#c08a4a,#5a3a1e 70%)}
-.p2{background:linear-gradient(160deg,#3a2f5a,#9d6bdb)}
-.p3{background:radial-gradient(circle at 70% 20%,#f7c915,#b37b00 75%)}
-.p4{background:linear-gradient(180deg,#2a6fd6 0 50%,#f7c915 50% 100%)}
-.p5{background:linear-gradient(135deg,#4f7a00,#99cc00)}
-.p6{background:linear-gradient(135deg,#2b2433,#5b4d6e)}
-.meme-body{padding:16px;display:grid;gap:10px;flex:1;align-content:start}
-.opts{display:grid;gap:8px}
-.opt{font:inherit;font-size:14.5px;font-weight:600;text-align:left;padding:10px 12px;border-radius:var(--r-sm);border:1.5px solid var(--line);background:var(--bg);color:var(--text);cursor:pointer;transition:border-color .15s,background .15s}
+/* 3. Квіз-полароїди */
+.polas{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:22px}
+.pola{background:var(--bg);border-radius:6px;padding:12px 12px 14px;box-shadow:0 2px 0 var(--line),0 16px 30px -18px rgba(30,27,38,.45);display:grid;gap:10px;align-content:start;min-width:0;border:1px solid var(--line)}
+.pola:nth-child(3n+1){transform:rotate(-1.2deg)}.pola:nth-child(3n+2){transform:rotate(.8deg)}
+.pola .pic{aspect-ratio:1;border-radius:3px}
+.pola .num{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.opts{display:grid;gap:7px}
+.opt{font-size:14px;font-weight:700;text-align:left;padding:9px 11px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;line-height:1.3}
 .opt:hover{border-color:var(--violet)}
 .opt.ok{border-color:var(--right);background:color-mix(in srgb,var(--right) 14%,transparent);color:var(--right)}
 .opt.bad{border-color:var(--wrong);background:color-mix(in srgb,var(--wrong) 12%,transparent);color:var(--wrong);text-decoration:line-through}
-.explain{font-size:14px;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px}
-.score{font-family:var(--f-mono);font-weight:600;background:var(--text);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:14px}
+.explain{font-size:13.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
 
-/* Мовна лабораторія */
-.lab{display:grid;gap:12px}
-.lab-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px 16px}
-.lab-row q{font-family:var(--f-display);font-weight:700;font-size:16px;quotes:"«" "»"}
-.lab-row q mark{background:color-mix(in srgb,var(--yellow) 55%,transparent);color:inherit;padding:0 3px;border-radius:4px}
-.pair{display:flex;gap:8px;flex-wrap:wrap}
-.chip{font:inherit;font-weight:700;font-size:14.5px;padding:8px 14px;border-radius:var(--r-sm);border:1.5px solid var(--line);background:var(--bg);color:var(--text);cursor:pointer}
-.chip.ok{background:color-mix(in srgb,var(--right) 14%,transparent);color:var(--right);border-color:transparent}
-.chip.bad{background:color-mix(in srgb,var(--wrong) 14%,transparent);color:var(--wrong);text-decoration:line-through;text-decoration-thickness:2px;border-color:transparent}
-.lab-row .why{grid-column:1/-1;font-size:14px;color:var(--muted)}
+/* 4. Детектив: картки з категоріями */
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.cat{font-family:var(--f-display);font-size:12.5px;font-weight:800;padding:6px 11px;border-radius:9px;color:var(--ink)}
+.c-q{background:var(--yellow)}.c-p{background:var(--lime)}.c-b{background:#c9b2ef}.c-s{background:#ffb48a}
+.dets{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:16px}
+.det{background:var(--bg);border:1.5px solid var(--text);border-radius:14px;overflow:hidden;display:grid;align-content:start;min-width:0}
+.det .pic{aspect-ratio:4/3}
+.det .body{padding:10px;display:grid;gap:8px}
+.det .chips{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.det .chips button{font-size:12px;font-weight:800;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);padding:6px 4px;cursor:pointer}
+.det .chips button.ok{background:color-mix(in srgb,var(--right) 16%,transparent);border-color:var(--right);color:var(--right)}
+.det .chips button.bad{border-color:var(--wrong);color:var(--wrong);text-decoration:line-through}
+.det.solved{border-color:var(--right)}
+.det .why{font-size:13px;color:var(--muted)}
 
-/* Відео */
-.vids{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
-.vid{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;min-width:0}
-.vid-top{aspect-ratio:16/9;max-width:100%;display:grid;place-items:center;position:relative}
-.vid-top .play{width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.25)}
-.vid-top .play::after{content:"";border-left:18px solid #1e1b26;border-top:11px solid transparent;border-bottom:11px solid transparent;margin-left:5px}
-.vid-top .yr{position:absolute;left:12px;top:10px;font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.55);color:#fff;padding:3px 8px;border-radius:6px}
-.vid-body{padding:16px;display:grid;gap:8px;flex:1;align-content:start}
-.vid-body a.btn{justify-self:start;margin-top:4px}
-.qs{counter-reset:q;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:16px}
-.qs div{background:var(--bg);border:1.5px solid var(--text);border-radius:var(--r-sm);padding:12px;font-size:14.5px;font-weight:600}
-.qs div::before{counter-increment:q;content:"0" counter(q);display:block;font-family:var(--f-mono);font-size:12px;color:var(--violet);margin-bottom:4px}
+/* 5. Мовна лабораторія: зошит */
+.lab{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:18px}
+.lab-item{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:12px;display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;align-items:start;box-shadow:0 10px 24px -20px rgba(30,27,38,.6)}
+.lab-item .pic{aspect-ratio:1;border-radius:10px}
+.lab-item q{font-weight:700;font-size:14.5px;line-height:1.35;quotes:none;display:block;margin-bottom:8px}
+.lab-item .opts .opt{font-size:13px;padding:7px 9px}
+.lab-item .explain{grid-column:1/-1}
+.rule{display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.chip-w{background:color-mix(in srgb,var(--wrong) 14%,transparent);color:var(--wrong);text-decoration:line-through;text-decoration-thickness:2px;font-weight:700;padding:3px 9px;border-radius:8px}
+.chip-r{background:color-mix(in srgb,var(--right) 14%,transparent);color:var(--right);font-weight:700;padding:3px 9px;border-radius:8px}
 
-/* ШІ */
-.ai{position:relative;overflow:hidden}
-.ai .mark{right:-12%;top:8%;width:34%;max-width:420px;opacity:.11}
-.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;position:relative;z-index:1}
-.prompt{font-family:var(--f-mono);font-size:13.5px;line-height:1.55;background:var(--text);color:var(--bg);border-radius:var(--r-sm);padding:14px;white-space:pre-wrap;overflow-wrap:anywhere;margin-block:10px}
-.checks{display:grid;gap:8px;margin-top:8px}
-.checks label{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;cursor:pointer}
-.checks input{width:20px;height:20px;accent-color:var(--right);flex:none;margin-top:2px}
-.ai-tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.ai-tools span{font-size:12.5px;font-weight:700;border:1px solid currentColor;border-radius:999px;padding:3px 10px}
+/* 6. Хронологія: кадри плівки */
+.film{background:#141119;border-radius:18px;padding:22px 14px;position:relative;overflow-x:auto}
+.film::before,.film::after{content:"";position:absolute;left:0;right:0;height:10px;background:repeating-linear-gradient(90deg,transparent 0 10px,#3a3448 10px 22px)}
+.film::before{top:6px}.film::after{bottom:6px}
+.frames{display:grid;grid-template-columns:repeat(7,170px);gap:12px;width:max-content}
+.frame{background:#221d2c;border:2px solid #3a3448;border-radius:10px;padding:8px;display:grid;gap:8px;cursor:pointer;color:#f4f1f9;text-align:left;position:relative;width:100%}
+.frame .ph{aspect-ratio:1;border-radius:6px;overflow:hidden;background:#0f0d14}
+.frame .ph img{width:100%;height:100%;object-fit:contain;display:block}
+.frame span{font-size:12.5px;line-height:1.3}
+.frame .ord{position:absolute;top:-10px;left:-8px;width:34px;height:34px;border-radius:50%;background:var(--yellow);color:#1e1b26;font-family:var(--f-display);font-weight:900;display:grid;place-items:center;border:2px solid #141119}
+.frame .ord[hidden]{display:none}
+.frame.picked{border-color:var(--yellow)}
+.frame.good{border-color:var(--lime)}
+.frame.badpos{border-color:#ff7a5e}
+.frame .when{font-family:var(--f-mono);font-size:11.5px;color:var(--lime)}
+.chrono-ctl{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center}
+
+/* 7. Мем-музей: темна стіна */
+.museum{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(230px,260px);gap:22px;overflow-x:auto;padding:12px 4px 18px;scroll-snap-type:x proximity}
+.exh{scroll-snap-align:start;display:grid;gap:10px;align-content:start}
+.exh .frame-g{background:#f5efe2;padding:12px;border-radius:4px;box-shadow:0 0 0 6px #3b2f22,0 22px 40px -12px rgba(0,0,0,.8)}
+.exh .pic{aspect-ratio:1;background:#e9e1cf}
+.plaque{background:#2a2536;border:1px solid #3a3448;border-radius:6px;padding:9px 11px}
+.plaque .no{font-family:var(--f-mono);font-size:11px;color:var(--yellow)}
+.plaque b{display:block;font-size:13.5px;color:#f4f1f9;line-height:1.3}
+.plaque p{font-size:12.5px;color:#c9c3d6;line-height:1.4;margin-top:3px}
+
+/* 8. GIF-лабораторія: телефони */
+.phones{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;max-width:900px}
+.phone{background:#141119;border-radius:36px;padding:14px;box-shadow:0 0 0 2px #3a3448,0 26px 50px -20px rgba(0,0,0,.6);display:grid;gap:10px;min-width:0}
+.phone .notch{width:90px;height:8px;border-radius:999px;background:#2a2536;margin:2px auto 4px}
+.phone .pic{aspect-ratio:1;border-radius:20px;background:#0f0d14}
+.phone label{font-size:13px;font-weight:700;color:#f4f1f9}
+.phone input{font:inherit;font-size:15px;padding:10px 12px;border-radius:12px;border:1.5px solid #3a3448;background:#221d2c;color:#f4f1f9;width:100%}
+.phone p{font-size:13px;color:#c9c3d6}
+.vlinks{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.vlinks .btn{white-space:normal;text-align:left}
+
+/* 9. Групи: справи */
+.gtabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.gtab{border:2px solid var(--text);border-radius:14px;padding:10px 14px;background:var(--bg);cursor:pointer;display:grid;gap:2px;text-align:left;min-width:0}
+.gtab b{font-family:var(--f-display);font-size:15px}
+.gtab small{font-size:12px;color:var(--muted)}
+.gtab[aria-selected="true"]{box-shadow:5px 5px 0 var(--violet);background:var(--surface)}
+.gtab .gn{font-family:var(--f-display);font-weight:900;font-size:12px;width:24px;height:24px;border-radius:7px;display:inline-grid;place-items:center;color:var(--ink);margin-right:6px}
+.gpanel{border:2px solid var(--text);border-radius:var(--r);background:var(--bg);overflow:hidden}
+.gpanel-head{padding:18px 20px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;color:var(--ink)}
+.gpanel-head h3{font-size:22px}
+.gpanel-body{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;padding:20px}
+.gsteps{margin:0;padding-left:20px;display:grid;gap:8px}
+.gsteps li::marker{font-family:var(--f-display);font-weight:800;color:var(--violet)}
+.mats{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:12px}
+.mats .pic{aspect-ratio:1;border-radius:10px}
+.prompt{font-family:var(--f-mono);font-size:13px;line-height:1.55;background:var(--text);color:var(--bg);border-radius:var(--r-sm);padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;margin-block:8px}
+.checks{display:grid;gap:7px;margin-top:6px}
+.checks label{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
+.checks input{width:20px;height:20px;accent-color:var(--right);flex:none;margin-top:1px}
+.gtimer{display:flex;gap:10px;align-items:center}
+.gtimer output{font-family:var(--f-mono);font-weight:600;font-size:22px}
+.product{background:var(--surface-2);border-radius:var(--r-sm);padding:12px;font-size:14.5px}
+.product b{font-family:var(--f-display);font-size:13px}
 
 /* Конструктор */
 .maker{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
-.maker canvas,.maker img{width:100%;max-width:100%;height:auto;border-radius:var(--r);border:1px solid var(--line);display:block}
+.maker canvas,.maker #outImg{width:100%;max-width:100%;height:auto;border-radius:var(--r);border:1px solid var(--line);display:block}
 .field{display:grid;gap:6px}
 .field label{font-size:13px;font-weight:700}
-.field input[type=text]{font:inherit;font-size:16px;padding:11px 14px;border-radius:var(--r-sm);border:1.5px solid var(--line);background:var(--bg);color:var(--text);width:100%}
-.swatches{display:flex;gap:8px;flex-wrap:wrap}
-.sw{width:44px;height:44px;border-radius:12px;border:2px solid var(--line);cursor:pointer;padding:0}
-.sw[aria-pressed="true"]{outline:3px solid var(--text);outline-offset:2px}
-.upload{font-size:14px}
-.upload input{font:inherit;font-size:13px;max-width:100%}
+.field input[type=text]{font-size:16px;padding:11px 14px;border-radius:var(--r-sm);border:1.5px solid var(--line);background:var(--bg);color:var(--text);width:100%}
+.tpls{display:flex;gap:8px;flex-wrap:wrap}
+.tpl{width:62px;height:62px;border-radius:12px;border:2px solid var(--line);cursor:pointer;padding:0;overflow:hidden;background:#0f0d14}
+.tpl img{width:100%;height:100%;object-fit:cover;display:block}
+.tpl[aria-pressed="true"]{outline:3px solid var(--text);outline-offset:2px}
+.stack{display:grid;gap:14px}
 
-/* Рефлексія */
-.mood{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-.mood button{font:inherit;cursor:pointer;border-radius:var(--r);border:2px solid var(--line);background:var(--surface);color:var(--text);padding:18px 14px;text-align:left;display:grid;gap:6px;transition:transform .15s}
-.mood button:hover{transform:translateY(-3px)}
-.mood button[aria-pressed="true"]{border-color:var(--text);box-shadow:5px 5px 0 var(--violet)}
-.mood b{font-family:var(--f-display);font-size:15px;line-height:1.2}
-.mood span{font-size:13.5px;color:var(--muted)}
-.mood .face{font-family:var(--f-display);font-weight:900;font-size:28px;color:var(--violet)}
+/* 10. Рефлексія */
+.refl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.hw{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:22px}
 
-footer{border-top:1px solid var(--line);padding-block:30px;font-size:14px;color:var(--muted)}
-footer .wrap{display:flex;gap:16px;justify-content:space-between;flex-wrap:wrap;align-items:center}
+/* Лайтбокс */
+.lb{position:fixed;inset:0;z-index:50;background:rgba(10,8,14,.92);display:grid;place-items:center;padding:20px;cursor:zoom-out}
+.lb[hidden]{display:none}
+.lb img{max-width:min(96vw,1100px);max-height:80vh;object-fit:contain;border-radius:10px;background:#000}
+.lb p{color:#f4f1f9;font-size:15px;margin-top:12px;text-align:center;max-width:70ch}
+.lb button{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:14px}
 
-@media (max-width:900px){
+footer{border-top:1px solid var(--line);padding-block:28px;font-size:14px;color:var(--muted)}
+footer .wrap{display:flex;gap:16px;justify-content:space-between;flex-wrap:wrap}
+
+@media (max-width:980px){
+  .moods,.forms,.refl{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .roots{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .gpanel-body,.maker,.hw{grid-template-columns:minmax(0,1fr)}
   .bento{grid-template-columns:repeat(2,minmax(0,1fr))}
   .s2,.s3,.s4,.s6{grid-column:span 2}
-  .s2.half{grid-column:span 1}
-  .timeline{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .steps,.flips{grid-template-columns:minmax(0,1fr)}
-  .qs{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .maker{grid-template-columns:minmax(0,1fr)}
-  .mood{grid-template-columns:repeat(2,minmax(0,1fr))}
   .meta{grid-template-columns:repeat(2,minmax(0,1fr))}
   .mark.r{right:-30%;top:-6%;width:70%;opacity:.08}
   .mark.l{left:-30%;bottom:-8%;width:62%;opacity:.08}
-  .ai .mark{right:-30%;top:-4%;width:62%;opacity:.08}
-  .bar-logo{display:none}
+  .brand{display:none}
+  .steps small{display:none}
 }
-@media (max-width:560px){
-  .lab-row{grid-template-columns:minmax(0,1fr)}
-  .timeline,.s2.half{grid-template-columns:minmax(0,1fr)}
-  .s2.half{grid-column:span 2}
-  .timeline{grid-template-columns:minmax(0,1fr)}
+@media (max-width:620px){
+  .anat{grid-template-columns:minmax(0,1fr)}
+  .anat .arrow{transform:rotate(90deg);justify-self:center}
+  .phones{grid-template-columns:minmax(0,1fr)}
+  .lab-item{grid-template-columns:90px minmax(0,1fr)}
+  .moods{gap:14px}
+  .done-pill{display:none}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
@@ -245,23 +324,18 @@ footer .wrap{display:flex;gap:16px;justify-content:space-between;flex-wrap:wrap;
 </style>
 
 <header class="bar">
-  <div class="wrap bar-in">
-    <span class="bar-logo">МЕМОЛОГІЯ<b>11</b></span>
-    <nav class="stages" id="stages" aria-label="Етапи уроку">
-      <a href="#start"><span class="mono">0–3</span>Розминка</a>
-      <a href="#theory"><span class="mono">3–11</span>Теорія</a>
-      <a href="#photo"><span class="mono">11–17</span>Фото-меми</a>
-      <a href="#lang"><span class="mono">17–21</span>Мовна лабораторія</a>
-      <a href="#video"><span class="mono">21–27</span>Відео-меми</a>
-      <a href="#ai"><span class="mono">27–36</span>ШІ + конструктор</a>
-      <a href="#reflex"><span class="mono">36–40</span>Рефлексія</a>
-    </nav>
-    <div class="timer">
-      <output id="clock" aria-live="off">40:00</output>
+  <div class="wrap">
+    <div class="bar-top">
+      <span class="brand">МЕМОЛОГІЯ<b>11</b></span>
+      <span class="done-pill">Виконано: <b id="doneN">0</b> / 8</span>
+      <span class="now-lbl" id="nowLbl">Натисніть «Старт уроку»</span>
+      <span class="spacer"></span>
+      <output class="clock" id="clock">40:00</output>
       <button class="btn sm" id="timerBtn" type="button">Старт уроку</button>
     </div>
+    <ol class="steps" id="steps" aria-label="Етапи уроку"></ol>
   </div>
-  <div class="progress"><i id="prog"></i></div>
+  <div class="scrollbar"><i id="scrollBar"></i></div>
 </header>
 
 <section class="hero">
@@ -269,337 +343,223 @@ footer .wrap{display:flex;gap:16px;justify-content:space-between;flex-wrap:wrap;
   <img class="mark l" src="%%FEATHER%%" alt="">
   <div class="wrap">
     <img class="logo" src="%%LOGO%%" alt="Midgard">
-    <div class="hero-tags">
+    <div class="tags">
       <span class="sticker g">Українська мова</span>
       <span class="sticker y">Література</span>
       <span class="sticker v">Історія</span>
     </div>
     <h1>Мем — це<br><span class="hl">фольклор</span> <span class="out">XXI</span> століття</h1>
-    <p class="hero-lead">Інтегрований урок для 11 класу. Розбираємося, звідки беруться меми, чому лист запорожців султанові та «Енеїда» Котляревського працюють як меми, як війна 2022 року стала мемною мовою спротиву і як не наробити мовних помилок у власному підписі.</p>
+    <p class="lead">Інтегрований урок для 11 класу. Розбираємо, як народжуються меми, впізнаємо в них класиків і історичні події, ловимо мовні помилки, а потім у групах моделюємо власний мемний проєкт разом зі штучним інтелектом.</p>
     <div class="meta">
       <div><small>Клас</small><strong>11</strong></div>
       <div><small>Тривалість</small><strong>40 хвилин</strong></div>
-      <div><small>Формат</small><strong>Групи по 3–4</strong></div>
-      <div><small>Потрібно</small><strong>Смартфони, ШІ-чат</strong></div>
+      <div><small>Мемів на уроці</small><strong>106, без повторів</strong></div>
+      <div><small>Формат</small><strong>Пари і 4 групи</strong></div>
     </div>
+    <p class="tip"><b>Для проєктора:</b> натисніть на будь-який мем, щоб відкрити його на весь екран. Угорі — стрічка прогресу: етапи заповнюються за таймером, а позначка ✓ з'являється, коли клас виконав завдання.</p>
   </div>
 </section>
 
 <div class="ticker" aria-hidden="true"><div class="ticker-track">
-  <span>Еней був парубок моторний</span><span>Бавовна</span><span>Доброго вечора, ми з України</span><span>Світ ловив мене, та не спіймав</span><span>Тракторні війська</span><span>Борітеся — поборете</span><span>Пес Патрон на службі</span>
-  <span>Еней був парубок моторний</span><span>Бавовна</span><span>Доброго вечора, ми з України</span><span>Світ ловив мене, та не спіймав</span><span>Тракторні війська</span><span>Борітеся — поборете</span><span>Пес Патрон на службі</span>
+  <span>Шевченкіт і Франкотик</span><span>Contra spem spero</span><span>Протягом, а не на протязі</span><span>Посполітєє</span><span>Я йду дахом</span><span>Intermezzo</span><span>Шкода, Октавіане</span>
+  <span>Шевченкіт і Франкотик</span><span>Contra spem spero</span><span>Протягом, а не на протязі</span><span>Посполітєє</span><span>Я йду дахом</span><span>Intermezzo</span><span>Шкода, Октавіане</span>
 </div></div>
 
 <main>
 <!-- 0–3 Розминка -->
-<section class="sec" id="start"><div class="wrap">
+<section class="sec band-yellow" id="warm"><div class="wrap">
   <div class="sec-head">
     <div>
-      <div class="eyebrow"><span class="min">0–3 хв</span>Мотивація</div>
-      <h2>Мем-розминка: вгадай за трьома словами</h2>
+      <div class="eyebrow"><span class="min">0–3 хв</span>Розминка</div>
+      <h2>Який ти мем сьогодні?</h2>
     </div>
-    <p class="muted col" style="max-width:40ch">Клас вигукує відповідь, учитель тисне на картку, щоб перевернути її.</p>
+    <div style="display:flex;gap:10px;align-items:center"><span class="score" id="voteTotal">0 голосів</span><button class="btn ghost sm" type="button" id="voteReset">Скинути</button></div>
   </div>
-  <div class="flips">
-    <button class="flip" type="button" aria-label="Картка 1: перевернути">
-      <div class="flip-in">
-        <div class="flip-f"><small>КАРТКА 01</small><div class="clues"><span>острів</span><span>корабель</span><span>марка</span></div><small>натисни, щоб перевернути</small></div>
-        <div class="flip-b"><small>2022 · ІСТОРІЯ</small><strong>«Русскій воєнний корабль, іді…»</strong><span>Відповідь захисників острова Зміїний 24 лютого 2022 року. Згодом Укрпошта випустила марку з цим сюжетом.</span></div>
-      </div>
-    </button>
-    <button class="flip" type="button" aria-label="Картка 2: перевернути">
-      <div class="flip-in">
-        <div class="flip-f"><small>КАРТКА 02</small><div class="clues"><span>козаки</span><span>сміх</span><span>султан</span></div><small>натисни, щоб перевернути</small></div>
-        <div class="flip-b"><small>XVII СТ. · ІСТОРІЯ</small><strong>Лист запорожців турецькому султанові</strong><span>Легендарна зухвала відповідь козаків. Ілля Рєпін намалював, як її пишуть, і картина стала шаблоном для тисяч пародій.</span></div>
-      </div>
-    </button>
-    <button class="flip" type="button" aria-label="Картка 3: перевернути">
-      <div class="flip-in">
-        <div class="flip-f"><small>КАРТКА 03</small><div class="clues"><span>вибух</span><span>тканина</span><span>евфемізм</span></div><small>натисни, щоб перевернути</small></div>
-        <div class="flip-b"><small>2022 · МОВА</small><strong>«Бавовна»</strong><span>Російська пропаганда називала вибухи «хлопок». Українці переклали це слово буквально, як назву тканини, і висміяли евфемізм.</span></div>
-      </div>
-    </button>
-  </div>
+  <p class="col" style="margin-bottom:22px">Учні піднімають руки за свій настрій, учитель натискає на картку стільки разів, скільки рук. Найпопулярніший мем — настрій класу.</p>
+  <div class="moods" id="moods"></div>
 </div></section>
 
-<!-- 3–11 Теорія -->
+<!-- 3–8 Теорія -->
 <section class="sec" id="theory"><div class="wrap">
   <div class="sec-head">
     <div>
-      <div class="eyebrow"><span class="min">3–11 хв</span><span class="subj"><i class="m">мова</i><i class="lt">література</i><i class="h">історія</i></span></div>
-      <h2>Що таке мем і чому він живе</h2>
+      <div class="eyebrow"><span class="min">3–8 хв</span><span class="subj"><i class="m">мова</i><i class="lt">література</i><i class="h">історія</i></span></div>
+      <h2>Як влаштований мем</h2>
     </div>
   </div>
   <div class="bento">
     <div class="card lime s4">
       <span class="mono" style="font-size:12px">ВИЗНАЧЕННЯ</span>
-      <h3 style="font-size:24px;margin-top:8px">Мем — одиниця культурної інформації, яка поширюється через наслідування.</h3>
-      <p style="margin-top:10px">Термін запропонував біолог Річард Докінз у книжці «Егоїстичний ген» (1976). Слово утворене від грецького <i>mímēma</i>, «наслідування», і співзвучне англійському <i>gene</i>, «ген». Інтернет-мем: картинка, відео, фраза чи звук, які люди копіюють і змінюють під себе.</p>
+      <h3 style="font-size:23px;margin-top:8px">Мем — одиниця культурної інформації, яка поширюється через наслідування.</h3>
+      <p style="margin-top:10px">Слово запропонував біолог Річард Докінз у книжці «Егоїстичний ген» (1976): від грецького <i>mímēma</i>, «наслідування», співзвучно з <i>gene</i>. Інтернет-мем — картинка, відео, фраза чи звук, які люди копіюють і змінюють під себе. Як і фольклор, мем часто не має відомого автора та існує в багатьох варіантах.</p>
     </div>
     <div class="card violet s2">
-      <span class="big">1976</span>
-      <p style="margin-top:10px">рік, коли з'явилося слово «мем». Перші інтернет-меми з'явилися в 1990-х.</p>
+      <span class="big">3</span>
+      <p style="margin-top:10px"><b>ознаки мему:</b> упізнаваний шаблон, нові варіації та спільний контекст, без якого не смішно.</p>
     </div>
+  </div>
 
-    <div class="card s2 half">
-      <h3>Шаблон</h3>
-      <p class="muted">Упізнавана основа: кадр, фраза, мелодія. Її знає «вся аудиторія».</p>
-    </div>
-    <div class="card s2 half">
-      <h3>Варіація</h3>
-      <p class="muted">Кожен автор змінює підпис або контекст. Без змін мем вмирає.</p>
+  <h3 style="margin:30px 0 12px;font-size:20px">Анатомія: шаблон → варіація</h3>
+  <div class="bento">
+    <div class="card s4">
+      <div class="anat" id="anat1"></div>
     </div>
     <div class="card s2">
-      <h3>Спільний контекст</h3>
-      <p class="muted">Смішно лише тим, хто знає першоджерело. Мем об'єднує «своїх».</p>
-    </div>
-
-    <div class="card yellow s3">
-      <span class="mono" style="font-size:12px">МЕМ = ФОЛЬКЛОР</span>
-      <h3 style="margin-top:8px">Як прислів'я чи анекдот</h3>
-      <ul class="list" style="margin-top:8px">
-        <li>автор часто невідомий або забутий;</li>
-        <li>передається «з уст в уста», тепер через репости;</li>
-        <li>існує в багатьох варіантах;</li>
-        <li>відбиває настрій суспільства в конкретний час.</li>
-      </ul>
-    </div>
-    <div class="card s3">
-      <span class="mono muted" style="font-size:12px">ВИДИ МЕМІВ</span>
-      <ul class="list" style="margin-top:10px">
-        <li><b>Фото-меми:</b> зображення з підписом угорі й унизу.</li>
-        <li><b>Відео-меми:</b> короткі ролики, тренди TikTok і Reels.</li>
-        <li><b>Текстові:</b> фрази й цитати, що стали крилатими.</li>
-        <li><b>Звукові:</b> пісні та фрагменти, які накладають на нові відео.</li>
-      </ul>
+      <div class="fig" id="anat2"></div>
     </div>
   </div>
 
-  <h3 style="margin:34px 0 14px;font-size:22px">Українські меми до інтернету: коротка історія</h3>
-  <div class="timeline">
-    <div class="tl"><span class="yr">XVII ст.</span><p>Лист запорожців турецькому султанові: легендарна відповідь, повна сміливого гумору. Списки тексту ходили століттями.</p><span class="tag">історія</span></div>
-    <div class="tl"><span class="yr">1798</span><p>І. Котляревський, «Енеїда». Бурлескна травестія: героя Вергілія переодягли в козака. Взяти відомий «шаблон» і переробити на свій лад: так працює мем.</p><span class="tag">література</span></div>
-    <div class="tl"><span class="yr">1845</span><p>Т. Шевченко: «Борітеся — поборете! Вам Бог помагає!» (поема «Кавказ»). Цитата досі з'являється на плакатах і в соцмережах.</p><span class="tag">література</span></div>
-    <div class="tl"><span class="yr">1880–91</span><p>І. Рєпін пише картину «Запорожці пишуть листа турецькому султанові». Сьогодні до неї домальовують нові підписи й обличчя.</p><span class="tag">мистецтво</span></div>
-    <div class="tl"><span class="yr">2022</span><p>Повномасштабне вторгнення: «корабель», «бавовна», тракторні війська, пес Патрон. Гумор стає способом опору та підтримки.</p><span class="tag">сучасність</span></div>
-  </div>
-  <p class="teacher"><b>Учителю:</b> запитайте клас, що спільного між «Енеїдою» і сучасним мемом-переробкою. Очікувана відповідь: відомий сюжет + нові обставини + гумор, зрозумілий «своїм».</p>
+  <h3 style="margin:30px 0 12px;font-size:20px">Форми мемів</h3>
+  <div class="forms" id="forms"></div>
 </div></section>
 
-<!-- 11–17 Фото-меми -->
-<section class="sec" id="photo"><div class="wrap">
+<section class="sec band-night" id="evo"><div class="wrap">
   <div class="sec-head">
     <div>
-      <div class="eyebrow"><span class="min">11–17 хв</span><span class="subj"><i class="lt">література</i><i class="h">історія</i></span></div>
-      <h2>Завдання 1. Знайди першоджерело</h2>
+      <div class="eyebrow"><span class="min">теорія</span>прокрутіть стрічку вбік</div>
+      <h2>Еволюція: від сови до «6-7»</h2>
     </div>
-    <span class="score" id="score1">0 / 5</span>
   </div>
-  <p class="col" style="margin-bottom:20px">Кожен мем спирається на текст або подію з літератури чи історії. Обери правильне першоджерело. Правильна відповідь засвітиться зеленим, а під карткою з'явиться пояснення.</p>
-  <div class="memes" id="quiz">
-    <article class="meme">
-      <div class="meme-pic p1"><span class="cap">Коли пишеш відповідь у чаті класу</span><div class="scene"><em>[група козаків довкола столу, регочуть над листом]</em></div><span class="cap">Всім колективом</span></div>
-      <div class="meme-body"><div class="opts" data-q>
-        <button class="opt" type="button">«Слово о полку Ігоревім»</button>
-        <button class="opt" type="button" data-ok>Картина Рєпіна про лист запорожців султанові</button>
-        <button class="opt" type="button">«Тигролови» І. Багряного</button>
-      </div><p class="explain" hidden>Картина І. Рєпіна (1880–1891) про легендарний лист козаків. Сцену спільного творення зухвалої відповіді впізнають усі, тому її легко «переписати» під будь-яку групову ситуацію.</p></div>
-    </article>
-    <article class="meme">
-      <div class="meme-pic p2"><span class="cap">Еней був парубок моторний</span><div class="scene"><em>[учень біжить до їдальні після дзвінка]</em></div><span class="cap">І хлопець хоч куди козак</span></div>
-      <div class="meme-body"><div class="opts" data-q>
-        <button class="opt" type="button">Т. Шевченко, «Кобзар»</button>
-        <button class="opt" type="button">Леся Українка, «Лісова пісня»</button>
-        <button class="opt" type="button" data-ok>І. Котляревський, «Енеїда»</button>
-      </div><p class="explain" hidden>Перші рядки «Енеїди» (1798). Сам твір побудований як «мем»: Котляревський узяв відомий сюжет Вергілія і переніс його в козацький побут.</p></div>
-    </article>
-    <article class="meme">
-      <div class="meme-pic p3"><span class="cap">Мій список справ на вихідні</span><div class="scene"><em>[кіт спокійно спить на купі зошитів]</em></div><span class="cap">Світ ловив мене, та не спіймав</span></div>
-      <div class="meme-body"><div class="opts" data-q>
-        <button class="opt" type="button" data-ok>Григорій Сковорода</button>
-        <button class="opt" type="button">Іван Франко</button>
-        <button class="opt" type="button">Ліна Костенко</button>
-      </div><p class="explain" hidden>Слова, які Сковорода заповів написати на своїй могилі. Філософ мав на увазі свободу від суєти. У мемі ця думка стала іронічним виправданням для відпочинку.</p></div>
-    </article>
-    <article class="meme">
-      <div class="meme-pic p4"><span class="cap">Учітесь, читайте</span><div class="scene"><em>[одинадцятикласник ночами готується до НМТ]</em></div><span class="cap">І чужому научайтесь, й свого не цурайтесь</span></div>
-      <div class="meme-body"><div class="opts" data-q>
-        <button class="opt" type="button">П. Куліш, «Чорна рада»</button>
-        <button class="opt" type="button" data-ok>Т. Шевченко, «І мертвим, і живим…»</button>
-        <button class="opt" type="button">М. Хвильовий, «Я (Романтика)»</button>
-      </div><p class="explain" hidden>Послання Шевченка «І мертвим, і живим, і ненарожденним…» (1845). Цитата стала крилатою: її використовують і в серйозному, і в жартівливому контексті.</p></div>
-    </article>
-    <article class="meme">
-      <div class="meme-pic p5"><span class="cap">Фермер, який знайшов покинутий танк</span><div class="scene"><em>[трактор буксирує військову техніку полем]</em></div><span class="cap">Тракторні війська</span></div>
-      <div class="meme-body"><div class="opts" data-q>
-        <button class="opt" type="button">Друга світова війна, 1941 р.</button>
-        <button class="opt" type="button">Помаранчева революція, 2004 р.</button>
-        <button class="opt" type="button" data-ok>Повномасштабне вторгнення, весна 2022 р.</button>
-      </div><p class="explain" hidden>Навесні 2022 року в мережі ширилися відео, як українські фермери тракторами відбуксировують покинуту російську техніку. Так народився мем про «найсильніші війська».</p></div>
-    </article>
+  <div class="evo" id="evoList"></div>
+  <div class="roots">
+    <div><b>XVII ст.</b><p>Лист запорожців турецькому султанові: зухвала відповідь, яку переписували століттями.</p></div>
+    <div><b>1798</b><p>«Енеїда» Котляревського: відомий сюжет Вергілія переробили на козацький лад. Так само працює мем.</p></div>
+    <div><b>1845</b><p>«Борітеся — поборете!» Шевченка досі живе на плакатах і в соцмережах.</p></div>
+    <div><b>1880–1891</b><p>Картина Рєпіна про запорожців стала шаблоном для тисяч пародій.</p></div>
   </div>
-  <p class="teacher"><b>Учителю:</b> на кожну картку — близько хвилини. Після відповіді попросіть групу придумати власний підпис до того самого шаблону.</p>
+  <p class="teacher"><b>Учителю:</b> запитайте, що спільного між «Енеїдою» і сучасним мемом. Очікувана відповідь: відомий шаблон, нові обставини і гумор для «своїх».</p>
 </div></section>
 
-<!-- 17–21 Мова -->
-<section class="sec" id="lang"><div class="wrap">
+<!-- 8–12 Література -->
+<section class="sec band-lime" id="lit"><div class="wrap">
   <div class="sec-head">
     <div>
-      <div class="eyebrow"><span class="min">17–21 хв</span><span class="subj"><i class="m">мова</i></span></div>
-      <h2>Завдання 2. Мовна лабораторія: відредагуй підпис</h2>
+      <div class="eyebrow"><span class="min">8–12 хв</span><span class="subj"><i class="lt">література</i></span>· фронтально</div>
+      <h2>Завдання 1. Хто з класиків у мемі?</h2>
     </div>
-    <span class="score" id="score2">0 / 6</span>
+    <span class="score" id="litScore">0 / 8</span>
   </div>
-  <p class="col" style="margin-bottom:20px">Мем може бути смішним і водночас грамотним. У кожному підписі виділено помилку. Обери правильний варіант.</p>
+  <p class="col" style="margin-bottom:24px">Кожен мем спирається на твір або автора з програми. Оберіть правильну відповідь: вона засвітиться зеленим, а під карткою з'явиться пояснення.</p>
+  <div class="polas" id="litQuiz"></div>
+</div></section>
+
+<!-- 12–15 Детектив -->
+<section class="sec grid-paper" id="detect"><div class="wrap">
+  <div class="sec-head">
+    <div>
+      <div class="eyebrow"><span class="min">12–15 хв</span><span class="subj"><i class="lt">література</i><i class="m">мова</i></span>· у парах</div>
+      <h2>Завдання 2. Мем-детектив: на чому тримається жарт?</h2>
+    </div>
+    <span class="score" id="detScore">0 / 11</span>
+  </div>
+  <p class="col" style="margin-bottom:14px">Визначте, з чого «зроблено» кожен мем.</p>
+  <div class="legend"><span class="cat c-q">Цитата</span><span class="cat c-p">Мовна гра</span><span class="cat c-b">Біографія автора</span><span class="cat c-s">Сюжет або мотив твору</span></div>
+  <div class="dets" id="dets"></div>
+</div></section>
+
+<!-- 15–18 Мова -->
+<section class="sec notebook" id="lang"><div class="wrap" style="padding-left:64px">
+  <div class="sec-head">
+    <div>
+      <div class="eyebrow"><span class="min">15–18 хв</span><span class="subj"><i class="m">мова</i></span>· у парах</div>
+      <h2>Завдання 3. Мовна лабораторія</h2>
+    </div>
+    <span class="score" id="labScore">0 / 9</span>
+  </div>
+  <p class="col" style="margin-bottom:22px">Яке мовне явище обіграно в мемі? Тут сміються з помилок, синонімів, паронімів і багатозначності.</p>
   <div class="lab" id="lab"></div>
 </div></section>
 
-<!-- 21–27 Відео -->
-<section class="sec" id="video"><div class="wrap">
+<!-- 18–21 Хронологія + музей -->
+<section class="sec band-night" id="chrono"><div class="wrap">
   <div class="sec-head">
     <div>
-      <div class="eyebrow"><span class="min">21–27 хв</span><span class="subj"><i class="h">історія</i><i class="lt">культура</i><i class="m">мова</i></span></div>
-      <h2>Завдання 3. Відео-меми: розбір у групах</h2>
+      <div class="eyebrow"><span class="min">18–21 хв</span><span class="subj"><i class="h">історія</i></span>· фронтально</div>
+      <h2>Завдання 4. Розстав меми на шкалі часу</h2>
     </div>
+    <span class="score" id="chronoScore">0 / 7</span>
   </div>
-  <p class="col" style="margin-bottom:20px">Кожна група отримує одне відео. Перегляньте фрагмент (до 1 хвилини) і дайте відповіді на п'ять запитань. Потім один представник групи за 30 секунд розповідає класу.</p>
-  <div class="vids">
-    <article class="vid">
-      <div class="vid-top" style="background:linear-gradient(135deg,#9d6bdb,#3a2f5a)"><span class="yr">2022</span><span class="play"></span></div>
-      <div class="vid-body"><h3>Група 1. «Ой у лузі червона калина»</h3><p class="muted" style="font-size:14.5px">Андрій Хливнюк співає стрілецьку пісню 1914 року на Софійській площі. Відео підхопили музиканти з усього світу, Pink Floyd записали на його основі «Hey Hey Rise Up».</p><a class="btn sm" href="https://www.youtube.com/results?search_query=%D0%A5%D0%BB%D0%B8%D0%B2%D0%BD%D1%8E%D0%BA+%D0%9E%D0%B9+%D1%83+%D0%BB%D1%83%D0%B7%D1%96+%D1%87%D0%B5%D1%80%D0%B2%D0%BE%D0%BD%D0%B0+%D0%BA%D0%B0%D0%BB%D0%B8%D0%BD%D0%B0" target="_blank" rel="noopener">Знайти на YouTube ↗</a></div>
-    </article>
-    <article class="vid">
-      <div class="vid-top" style="background:linear-gradient(135deg,#f7c915,#c08a00)"><span class="yr">2022</span><span class="play"></span></div>
-      <div class="vid-body"><h3>Група 2. «Доброго вечора, ми з України»</h3><p class="muted" style="font-size:14.5px">Пісня Probass ∆ Hardi стала звуковим мемом. Під неї знімали тисячі відео в TikTok, а фраза перетворилася на гасло.</p><a class="btn sm" href="https://www.youtube.com/results?search_query=%D0%94%D0%BE%D0%B1%D1%80%D0%BE%D0%B3%D0%BE+%D0%B2%D0%B5%D1%87%D0%BE%D1%80%D0%B0+%D0%BC%D0%B8+%D0%B7+%D0%A3%D0%BA%D1%80%D0%B0%D1%97%D0%BD%D0%B8+Probass+Hardi" target="_blank" rel="noopener">Знайти на YouTube ↗</a></div>
-    </article>
-    <article class="vid">
-      <div class="vid-top" style="background:linear-gradient(135deg,#99cc00,#4f7a00)"><span class="yr">2022</span><span class="play"></span></div>
-      <div class="vid-body"><h3>Група 3. Пес Патрон</h3><p class="muted" style="font-size:14.5px">Джек-рассел-тер'єр зі служби ДСНС допомагав шукати вибухонебезпечні предмети. Відео з ним стали символом підтримки й увійшли в мультфільми та книжки.</p><a class="btn sm" href="https://www.youtube.com/results?search_query=%D0%9F%D0%B5%D1%81+%D0%9F%D0%B0%D1%82%D1%80%D0%BE%D0%BD+%D0%94%D0%A1%D0%9D%D0%A1" target="_blank" rel="noopener">Знайти на YouTube ↗</a></div>
-    </article>
-    <article class="vid">
-      <div class="vid-top" style="background:linear-gradient(135deg,#2b2433,#9d6bdb)"><span class="yr">2022</span><span class="play"></span></div>
-      <div class="vid-body"><h3>Група 4. Kalush Orchestra, «Стефанія»</h3><p class="muted" style="font-size:14.5px">Переможна пісня Євробачення-2022. Фрази й рухи з виступу розлетілися мемами, а рожева панама стала впізнаваною деталлю.</p><a class="btn sm" href="https://www.youtube.com/results?search_query=Kalush+Orchestra+Stefania+Eurovision+2022" target="_blank" rel="noopener">Знайти на YouTube ↗</a></div>
-    </article>
+  <p class="col muted" style="margin-bottom:20px">Натискайте на кадри від найдавнішої події до найновішої. Потім натисніть «Перевірити»: під кожним кадром з'явиться дата.</p>
+  <div class="film"><div class="frames" id="frames"></div></div>
+  <div class="chrono-ctl">
+    <button class="btn" type="button" id="chronoCheck">Перевірити</button>
+    <button class="btn ghost sm" type="button" id="chronoReset" style="color:var(--night-text);border-color:#3a3448">Почати знову</button>
+    <span class="muted" id="chronoMsg"></span>
   </div>
-  <div class="card task" style="margin-top:18px">
-    <span class="task-n">Картка аналізу</span>
-    <h3>П'ять запитань до відео-мему</h3>
-    <div class="qs">
-      <div>Що відбувається у відео і хто автор?</div>
-      <div>Який шаблон повторюють інші?</div>
-      <div>Яка мовна гра чи цитата?</div>
-      <div>Яка історична подія стоїть за ним?</div>
-      <div>Чому мем поширився і кого він об'єднує?</div>
-    </div>
-  </div>
-  <p class="teacher"><b>Учителю:</b> відкрийте відео заздалегідь на своєму пристрої. Якщо інтернет у класі нестабільний, групи працюють за описом на картці.</p>
+
+  <h3 style="margin:44px 0 6px;font-size:22px;color:var(--night-text)">Мем-музей історії</h3>
+  <p class="muted" style="margin-bottom:12px">Експонати для групи «Мем-музей». Прокрутіть стіну вбік.</p>
+  <div class="museum" id="museum"></div>
 </div></section>
 
-<!-- 27–36 ШІ -->
-<section class="sec ai" id="ai">
-  <img class="mark" src="%%WAVE%%" alt="">
-  <div class="wrap" style="position:relative;z-index:1">
+<!-- 21–23 GIF -->
+<section class="sec band-violet" id="gif"><div class="wrap">
   <div class="sec-head">
     <div>
-      <div class="eyebrow"><span class="min">27–36 хв</span><span class="subj"><i class="m">мова</i><i class="lt">література</i></span>· робота в парах</div>
-      <h2>Завдання 4. ШІ-лабораторія: мем із класики</h2>
+      <div class="eyebrow"><span class="min">21–23 хв</span><span class="subj"><i class="m">мова</i></span>· індивідуально</div>
+      <h2>Завдання 5. GIF-лабораторія</h2>
     </div>
   </div>
-  <p class="col" style="margin-bottom:20px">Штучний інтелект швидко генерує ідеї, але часто помиляється в мові й фактах. Ваше завдання: отримати від ШІ ідеї, перевірити їх як редактори і створити власний мем у конструкторі нижче.</p>
-  <div class="steps">
-    <div class="card violet">
-      <span class="task-n" style="background:#fff;color:#1e1b26">Крок 1 · 3 хв</span>
-      <h3>Запитай ШІ</h3>
-      <p>Відкрий будь-який чат-бот і встав промпт. Цитату можна замінити на іншу з програми 11 класу.</p>
-      <div class="ai-tools"><span>ChatGPT</span><span>Gemini</span><span>Claude</span><span>Copilot</span></div>
-    </div>
-    <div class="card">
-      <span class="task-n">Крок 2 · 3 хв</span>
-      <h3>Перевір як редактор</h3>
-      <p class="muted">Познач усе, що ти перевірив. Якщо бодай один пункт не виконано, виправ підпис сам.</p>
-    </div>
-    <div class="card lime">
-      <span class="task-n">Крок 3 · 3 хв</span>
-      <h3>Створи мем</h3>
-      <p>Обери найкращий підпис, покращ його і зроби мем у конструкторі. Покажи класу з телефона.</p>
-    </div>
+  <p class="col" style="margin-bottom:24px">Відеомем живе без слів: його вставляють як реакцію. Придумайте до кожної гіфки підпис українською: ситуацію зі шкільного життя, де вона доречна. Перевірте орфографію.</p>
+  <div class="phones" id="phones"></div>
+  <div class="vlinks">
+    <a class="btn ghost sm" href="https://www.youtube.com/results?search_query=%D0%A5%D0%BB%D0%B8%D0%B2%D0%BD%D1%8E%D0%BA+%D0%9E%D0%B9+%D1%83+%D0%BB%D1%83%D0%B7%D1%96+%D1%87%D0%B5%D1%80%D0%B2%D0%BE%D0%BD%D0%B0+%D0%BA%D0%B0%D0%BB%D0%B8%D0%BD%D0%B0" target="_blank" rel="noopener">Відеомем: «Ой у лузі червона калина» ↗</a>
+    <a class="btn ghost sm" href="https://www.youtube.com/results?search_query=%D0%94%D0%BE%D0%B1%D1%80%D0%BE%D0%B3%D0%BE+%D0%B2%D0%B5%D1%87%D0%BE%D1%80%D0%B0+%D0%BC%D0%B8+%D0%B7+%D0%A3%D0%BA%D1%80%D0%B0%D1%97%D0%BD%D0%B8" target="_blank" rel="noopener">Звуковий мем: «Доброго вечора, ми з України» ↗</a>
   </div>
+</div></section>
 
-  <div class="bento" style="margin-top:14px">
-    <div class="card s3 task">
-      <span class="task-n">Промпт</span>
-      <div class="prompt" id="promptText">Ти — редактор шкільного медіа. Придумай 3 короткі підписи до мему на основі цитати Т. Шевченка «Учітесь, читайте, і чужому научайтесь, й свого не цурайтесь». Мем має бути про сучасне життя одинадцятикласника. Пиши літературною українською мовою, без образ, не більше 12 слів у підписі. До кожного підпису поясни одним реченням, як він пов'язаний із цитатою.</div>
-      <button class="btn sm" type="button" id="copyBtn">Скопіювати промпт</button>
-      <p class="muted" style="font-size:13.5px;margin-top:10px">Інші цитати: «Еней був парубок моторний…» (І. Котляревський), «Світ ловив мене, та не спіймав» (Г. Сковорода), «Борітеся — поборете!» (Т. Шевченко).</p>
-    </div>
-    <div class="card s3">
-      <span class="task-n">Чек-лист редактора</span>
-      <div class="checks" id="checks">
-        <label><input type="checkbox" id="c1"> Цитату наведено точно, автор і твір правильні.</label>
-        <label><input type="checkbox" id="c2"> Немає русизмів і калькованих конструкцій.</label>
-        <label><input type="checkbox" id="c3"> Немає орфографічних і пунктуаційних помилок.</label>
-        <label><input type="checkbox" id="c4"> Жарт нікого не принижує і не висміює трагедію.</label>
-        <label><input type="checkbox" id="c5"> Я змінив або покращив хоча б один підпис сам.</label>
-      </div>
-      <p class="mono" id="checkOut" style="margin-top:12px;font-size:13px">0 / 5 перевірено</p>
+<!-- 23–35 Групи -->
+<section class="sec" id="groups"><div class="wrap">
+  <div class="sec-head">
+    <div>
+      <div class="eyebrow"><span class="min">23–35 хв</span><span class="subj"><i class="m">мова</i><i class="lt">література</i><i class="h">історія</i></span>· 4 групи + ШІ</div>
+      <h2>Завдання 6. Творче моделювання в групах</h2>
     </div>
   </div>
+  <p class="col" style="margin-bottom:20px">Клас ділиться на 4 редакції. Кожна має роль, матеріали, крок зі штучним інтелектом і продукт. 8 хвилин на роботу, по 45 секунд на презентацію.</p>
+  <div class="gtabs" id="gtabs" role="tablist"></div>
+  <div id="gpanels"></div>
 
-  <div class="card" style="margin-top:14px">
-    <span class="task-n">Конструктор мемів</span>
+  <div class="card" style="margin-top:22px">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px"><span class="task-n">Конструктор мемів</span><span class="muted" style="font-size:14px">для всіх груп</span></div>
     <div class="maker">
       <div><canvas id="cv" width="800" height="800" aria-label="Попередній перегляд мему"></canvas></div>
       <div class="stack">
         <div class="field"><label for="top">Текст угорі</label><input type="text" id="top" value="Коли вчитель каже «відкрийте Енеїду»"></div>
         <div class="field"><label for="bottom">Текст унизу</label><input type="text" id="bottom" value="Еней був парубок моторний"></div>
-        <div class="field"><label>Фон</label>
-          <div class="swatches" id="sw">
-            <button class="sw" type="button" data-bg="lime" style="background:#99cc00" aria-label="Лаймовий фон" aria-pressed="true"></button>
-            <button class="sw" type="button" data-bg="violet" style="background:#9d6bdb" aria-label="Фіолетовий фон" aria-pressed="false"></button>
-            <button class="sw" type="button" data-bg="yellow" style="background:#f7c915" aria-label="Жовтий фон" aria-pressed="false"></button>
-            <button class="sw" type="button" data-bg="ink" style="background:#1e1b26" aria-label="Темний фон" aria-pressed="false"></button>
-          </div>
-        </div>
-        <div class="field upload"><label for="file">Або завантаж своє фото</label><input type="file" id="file" accept="image/*"></div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn violet" type="button" id="makeImg">Готово: показати картинку</button>
-        </div>
-        <p class="muted" style="font-size:13.5px">Щоб зберегти мем, натисни «Готово» і утримуй картинку пальцем або зроби скриншот.</p>
+        <div class="field"><label>Шаблон або фон</label><div class="tpls" id="tpls"></div></div>
+        <div class="field"><label for="file">Або завантажте своє фото</label><input type="file" id="file" accept="image/*" style="font-size:13px;max-width:100%"></div>
+        <div><button class="btn violet" type="button" id="makeImg">Готово: показати картинку</button></div>
+        <p class="muted" style="font-size:13.5px">Щоб зберегти мем, натисніть «Готово» і утримуйте картинку пальцем або зробіть скриншот.</p>
         <img id="outImg" alt="Готовий мем" hidden>
       </div>
     </div>
   </div>
-  <p class="teacher"><b>Учителю:</b> якщо в когось немає доступу до ШІ, пара працює з одним телефоном. Головне тут не згенерувати мем, а критично оцінити відповідь ШІ: обговоріть, яких помилок припустився бот.</p>
-  </div>
-</section>
+  <p class="teacher"><b>Учителю:</b> головне в кроці зі ШІ — не згенерувати, а перевірити. Попросіть кожну групу назвати одну помилку або неточність, яку зробив бот.</p>
+</div></section>
 
-<!-- 36–40 Рефлексія -->
-<section class="sec" id="reflex"><div class="wrap">
+<!-- 35–40 Рефлексія -->
+<section class="sec band-yellow" id="reflex"><div class="wrap">
   <div class="sec-head">
     <div>
-      <div class="eyebrow"><span class="min">36–40 хв</span>Рефлексія і домашнє завдання</div>
-      <h2>Мем-рефлексія: який ти зараз мем?</h2>
+      <div class="eyebrow"><span class="min">35–40 хв</span>Рефлексія і домашнє завдання</div>
+      <h2>Як ти після уроку?</h2>
     </div>
   </div>
-  <div class="mood" id="mood">
-    <button type="button" aria-pressed="false"><span class="face">10/10</span><b>Козаки пишуть листа</b><span>Усе зрозумів і можу пояснити іншим.</span></button>
-    <button type="button" aria-pressed="false"><span class="face">8/10</span><b>Еней моторний</b><span>Розібрався, було цікаво й динамічно.</span></button>
-    <button type="button" aria-pressed="false"><span class="face">5/10</span><b>Світ ловив мене…</b><span>Щось зрозумів, а щось утекло.</span></button>
-    <button type="button" aria-pressed="false"><span class="face">?/10</span><b>Бавовна в голові</b><span>Потрібно ще раз пояснити.</span></button>
-  </div>
-  <div class="bento" style="margin-top:18px">
-    <div class="card s3">
-      <h3>Закінчи речення</h3>
-      <ul class="list">
-        <li>Сьогодні я дізнався, що мем…</li>
-        <li>Найбільше мене здивувало…</li>
+  <div class="refl moods" id="refl"></div>
+  <div class="hw">
+    <div class="card">
+      <h3 style="margin-bottom:8px">Закінчи речення</h3>
+      <ul style="margin:0;padding-left:20px;display:grid;gap:6px">
+        <li>Мем схожий на фольклор, тому що…</li>
+        <li>Найбільше мене здивував мем про…</li>
         <li>Перш ніж поширити мем, я перевірю…</li>
       </ul>
     </div>
-    <div class="card yellow s3">
+    <div class="card" style="background:var(--lime);color:var(--ink);border-color:transparent">
       <span class="task-n">Домашнє завдання</span>
-      <h3>Мем за твором із програми 11 класу</h3>
-      <p>Створи мем за одним із творів: «Тигролови» І. Багряного, «Маруся Чурай» Л. Костенко, «Я (Романтика)» М. Хвильового, «Місто» В. Підмогильного. Додай 3–4 речення: який епізод обіграно і чому мем влучний. Перевір підпис за чек-листом редактора.</p>
+      <h3 style="margin:10px 0 6px">Мем за твором 11 класу</h3>
+      <p>Створіть мем за «Тигроловами» І. Багряного, «Марусею Чурай» Л. Костенко, «Містом» В. Підмогильного або новелою «Я (Романтика)» М. Хвильового. Додайте 3–4 речення: який епізод обіграно і чому мем влучний. Перевірте підпис за чек-листом редактора.</p>
     </div>
   </div>
 </div></section>
@@ -607,111 +567,276 @@ footer .wrap{display:flex;gap:16px;justify-content:space-between;flex-wrap:wrap;
 
 <footer><div class="wrap">
   <span>Мемологія · інтегрований урок · українська мова, література, історія · 11 клас</span>
-  <span class="mono">40 хв · Midgard</span>
+  <span>Меми з добірки вчителя, використано з навчальною метою</span>
 </div></footer>
+
+<div class="lb" id="lb" hidden><button class="btn sm" type="button" id="lbClose">Закрити ✕</button><div style="display:grid;justify-items:center"><img id="lbImg" alt=""><p id="lbCap"></p></div></div>
 
 <script>
 (()=>{
-  // ---- Таймер уроку ----
-  const marks=[0,3,11,17,21,27,36,40];
-  const links=[...document.querySelectorAll('#stages a')];
-  const clock=document.getElementById('clock'),prog=document.getElementById('prog'),btn=document.getElementById('timerBtn');
-  let t0=null,iv=null,paused=0;
-  const fmt=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0');
-  function setStage(i){links.forEach((a,j)=>a.classList.toggle('on',j===i));const a=links[i];if(a)a.scrollIntoView({block:'nearest',inline:'center'})}
-  function tick(){
-    const el=Math.min(2400,(Date.now()-t0)/1000);
-    clock.textContent=fmt(2400-el);
-    prog.style.width=(el/24)+'%';
-    const m=el/60;let i=marks.findIndex((v,k)=>m>=v&&m<marks[k+1]);if(i<0)i=6;setStage(i);
-    if(el>=2400){clearInterval(iv);iv=null;btn.textContent='Урок завершено'}
-  }
-  btn.addEventListener('click',()=>{
-    if(iv){clearInterval(iv);iv=null;paused=Date.now()-t0;btn.textContent='Продовжити';return}
-    t0=Date.now()-paused;iv=setInterval(tick,1000);tick();btn.textContent='Пауза';
+const M=n=>'m/'+String(n).padStart(3,'0')+'.webp';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pic=(n,alt,cls='')=>`<button class="pic ${cls}" type="button" data-zoom="${n}" data-cap="${esc(alt)}" aria-label="Збільшити: ${esc(alt)}"><img src="${M(n)}" alt="${esc(alt)}" loading="lazy"></button>`;
+const $=id=>document.getElementById(id);
+
+/* ---------- Стрічка прогресу ---------- */
+const STAGES=[['warm','Розминка',0,3],['theory','Теорія',3,8],['lit','Класики',8,12],['detect','Детектив',12,15],['lang','Мова',15,18],['chrono','Історія',18,21],['gif','GIF',21,23],['groups','Групи',23,35],['reflex','Рефлексія',35,40]];
+const stepsEl=$('steps');
+stepsEl.innerHTML=STAGES.map(([id,name,a,b])=>`<li data-st="${id}" style="flex:${b-a}"><a href="#${id}"><span class="seg"><i></i></span><small>${name}</small></a></li>`).join('');
+const stepLis=[...stepsEl.children];
+const done=new Set();
+function markDone(id){if(done.has(id))return;done.add(id);const li=stepsEl.querySelector(`[data-st="${id}"]`);if(li)li.classList.add('ok');$('doneN').textContent=[...done].filter(x=>x!=='theory').length}
+let t0=null,iv=null,paused=0;
+const fmt=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0');
+function tick(){
+  const el=Math.min(2400,(Date.now()-t0)/1000),m=el/60;
+  $('clock').textContent=fmt(2400-el);
+  STAGES.forEach(([id,,a,b],i)=>{const f=Math.max(0,Math.min(1,(m-a)/(b-a)));stepLis[i].querySelector('.seg i').style.width=(f*100)+'%';stepLis[i].classList.toggle('now',m>=a&&m<b);if(m>=a&&m<b)$('nowLbl').textContent='Зараз: '+STAGES[i][1]+' · '+a+'–'+b+' хв'});
+  if(m>=8)markDone('theory');
+  if(el>=2400){clearInterval(iv);iv=null;$('timerBtn').textContent='Урок завершено'}
+}
+$('timerBtn').addEventListener('click',()=>{
+  if(iv){clearInterval(iv);iv=null;paused=Date.now()-t0;$('timerBtn').textContent='Продовжити';return}
+  t0=Date.now()-paused;iv=setInterval(tick,1000);tick();$('timerBtn').textContent='Пауза';
+});
+addEventListener('scroll',()=>{const h=document.documentElement;$('scrollBar').style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%'},{passive:true});
+
+/* ---------- Лайтбокс ---------- */
+const lb=$('lb');
+document.addEventListener('click',e=>{const z=e.target.closest('[data-zoom]');if(!z)return;$('lbImg').src=M(z.dataset.zoom);$('lbImg').alt=z.dataset.cap;$('lbCap').textContent=z.dataset.cap;lb.hidden=false});
+lb.addEventListener('click',()=>{lb.hidden=true});
+addEventListener('keydown',e=>{if(e.key==='Escape')lb.hidden=true});
+
+/* ---------- Голосування (розминка і рефлексія) ---------- */
+function voteGrid(el,items,onVote){
+  el.innerHTML=items.map(([n,t,s])=>`<button class="mood" type="button" data-v="0"><span class="votes" hidden>0</span><span class="ph"><img src="${M(n)}" alt="${esc(t)}" loading="lazy"></span><b>${t}</b><span>${s}</span></button>`).join('');
+  el.addEventListener('click',e=>{const b=e.target.closest('.mood');if(!b)return;const v=+b.dataset.v+1;b.dataset.v=v;const c=b.querySelector('.votes');c.hidden=false;c.textContent=v;onVote&&onVote()});
+}
+const moods=$('moods');
+voteGrid(moods,[
+  [7,'Кіану на лавці','Сумую за канікулами'],[6,'Математичні розрахунки','Нічого не зрозуміло, але цікаво'],
+  [32,'Керміт за кермом','Погнали, я готовий!'],[30,'Задоволений Пікар','Нарешті щось цікаве'],
+  [29,'Ді Капріо крокує','Упевнений у собі'],[2,'Мружиться над папірцем','Придивляюся, що тут'],
+  [5,'Шокований Кіану','Що взагалі відбувається?'],[13,'Лисиця на стільці','Ще сплю, будьте ніжні']
+],()=>{const t=[...moods.children].reduce((s,b)=>s+ +b.dataset.v,0);$('voteTotal').textContent=t+' '+(t%10===1&&t%100!==11?'голос':t%10>=2&&t%10<=4&&(t%100<10||t%100>=20)?'голоси':'голосів');markDone('warm')});
+$('voteReset').addEventListener('click',()=>{[...moods.children].forEach(b=>{b.dataset.v=0;b.querySelector('.votes').hidden=true});$('voteTotal').textContent='0 голосів'});
+
+/* ---------- Теорія ---------- */
+$('anat1').innerHTML=`<figure class="fig" style="margin:0">${pic(3,'Шаблон: Чарлі зі стіною розслідування, серіал «У Філадельфії завжди сонячно»')}<b class="lab">Шаблон</b><figcaption>Кадр із серіалу: людина пояснює «змову» на стіні з нитками.</figcaption></figure>
+<span class="arrow" aria-hidden="true">→</span>
+<figure class="fig" style="margin:0">${pic(85,'Варіація: викладачі адаптують навчальні плани після кожної повітряної тривоги')}<b class="lab">Варіація</b><figcaption>Той самий кадр, новий контекст: «викладачі після кожної повітряної тривоги».</figcaption></figure>`;
+$('anat2').innerHTML=`<b class="lab">Один шаблон — два контексти</b><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${pic(11,'Гарольд: «Тім лід не може вигоріти, бо лід не горить, а тане»')}${pic(46,'Гарольд: новини про посольства і «Сталкер 2»')}</div><p class="cap">«Гарольд, що приховує біль»: мовна гра про тімліда і жарт про новини. Шаблон той самий, сенс різний.</p>`;
+$('forms').innerHTML=[
+  [44,'Image macro','Фото + великий напис угорі й унизу. Шаблон Віллі Вонки: «Ну давай, розкажи мені, що не плакав над Хатіко».'],
+  [41,'Комікс-шаблон','Кадри з репліками. Тут сміються з машинного перекладу: «Козацький рід» перекладач не впізнав.'],
+  [8,'Стартовий набір','Колаж речей, за якими впізнають «тип» людини. Цей — про «ненависть до капіталізму» з айфоном у руках.'],
+  [22,'Ремікс','Один персонаж «переїжджає» в різні фільми. Дівчинка в жовтому дощовику тікає з кадру в кадр.'],
+  [106,'Відеотренд','TikTok-тренд «я тоже хочу шоколадку». Зверніть увагу: «тоже» — русизм, українською «теж».']
+].map(([n,t,c])=>`<figure class="fig" style="margin:0">${pic(n,t+': '+c)}<span class="form-tag">${t}</span><figcaption>${c}</figcaption></figure>`).join('');
+$('evoList').innerHTML=[
+  [40,'2000-ні','O RLY?','Сова з підписом «Справді?» — один із перших форумних мемів-реакцій.'],
+  [9,'2013','Doge','Собака Кабосу і «ламана» англійська різнокольоровим шрифтом.'],
+  [33,'2013','This is fine','Пес у палаючій кімнаті з коміксу KC Green: «Усе гаразд».'],
+  [31,'2015','Drake','Кадри з кліпу «Hotline Bling»: «ні — так», вибір між двома варіантами.'],
+  [20,'2017','Distracted Boyfriend','Стокове фото 2015 року стало мемом про спокусу новим.'],
+  [0,'2019','Baby Yoda','Персонаж «Мандалорця» за тиждень став героєм тисяч мемів.'],
+  [47,'2025','6-7','Вигук «six-seven» із жестом долонями: Dictionary.com назвав «67» словом 2025 року.']
+].map(([n,y,t,c])=>`<article>${pic(n,t+' ('+y+'): '+c)}<span class="yr">${y}</span><h3>${t}</h3><p>${c}</p></article>`).join('');
+
+/* ---------- Універсальна перевірка варіантів ---------- */
+function choice(container,onSolve){
+  container.addEventListener('click',e=>{
+    const b=e.target.closest('.opt');if(!b)return;const g=b.closest('[data-q]');if(!g||g.dataset.done)return;
+    if(b.hasAttribute('data-ok')){b.classList.add('ok');g.dataset.done=1;const ex=g.parentElement.querySelector('.explain');if(ex)ex.hidden=false;onSolve()}
+    else b.classList.add('bad');
   });
+}
+const optsHTML=(ops,ok)=>ops.map((o,i)=>`<button class="opt" type="button"${i===ok?' data-ok':''}>${o}</button>`).join('');
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function mixed(ops){const ok=ops[0];const s=shuffle(ops);return [s,s.indexOf(ok)]}
 
-  // ---- Флип-картки ----
-  document.querySelectorAll('.flip').forEach(f=>f.addEventListener('click',()=>f.classList.toggle('open')));
+/* ---------- Завдання 1 ---------- */
+const LIT=[
+  [57,'Палетка тіней і підпис «…забутих предків»',['М. Коцюбинський, «Тіні забутих предків»','І. Франко, «Захар Беркут»','В. Стефаник, «Новина»'],'Гра слів: тіні для повік і повість М. Коцюбинського «Тіні забутих предків» (1911).'],
+  [16,'Постер «Я — Романтика» в стилі фільму «Я — легенда»',['М. Хвильовий, «Я (Романтика)»','В. Підмогильний, «Місто»','Ю. Яновський, «Вершники»'],'Новела М. Хвильового (1924). Підпис «вірний пес революції» відсилає до одного з героїв новели.'],
+  [24,'Дитяча гра «класики» і портрети поетів: «Неокласики»',['Поети-неокласики','Футуристи','Празька школа'],'Неокласики — «гроно п\'ятірне»: М. Зеров, М. Рильський, П. Филипович, М. Драй-Хмара, Юрій Клен.'],
+  [56,'«Відтворення бійки Мотрі і Кайдашихи в прямому ефірі»',['І. Нечуй-Левицький, «Кайдашева сім\'я»','Панас Мирний, «Хіба ревуть воли…»','Г. Квітка-Основ\'яненко, «Маруся»'],'Сварки Мотрі й Кайдашихи з повісті «Кайдашева сім\'я» (1879) — готове ток-шоу.'],
+  [87,'«Вкрали! — Що вкрали?! — Щастя! — Без надії сподіватися!»',['І. Франко і Леся Українка','Т. Шевченко і П. Куліш','В. Стефаник і О. Кобилянська'],'Драма І. Франка «Украдене щастя» і вірш Лесі Українки «Contra spem spero!» склеєні в один діалог.'],
+  [62,'«Contra Spem Spero!» у стилі плаката «We Can Do It!»',['Леся Українка','Ольга Кобилянська','Ліна Костенко'],'Вірш «Contra spem spero!» («Без надії сподіваюсь», 1890) і відомий американський плакат 1943 року.'],
+  [60,'Комікс: пароль «Чорна рада» надто довгий',['Пантелеймон Куліш','Іван Нечуй-Левицький','Марко Вовчок'],'«Чорна рада» (1857) П. Куліша — перший український історичний роман.'],
+  [59,'Містер Бін у полі: «INTERMEZZO»',['М. Коцюбинський, «Intermezzo»','В. Стефаник, «Камінний хрест»','Леся Українка, «Лісова пісня»'],'Новела «Intermezzo» (1908): втомлений герой тікає від людей і відпочиває серед полів. Містер Бін теж просто лягає в траву.']
+];
+let litN=0;
+$('litQuiz').innerHTML=LIT.map(([n,cap,ops,ex],i)=>{const [s,k]=mixed(ops);return `<article class="pola">${pic(n,cap)}<span class="num">№ ${i+1} · ${esc(cap)}</span><div class="opts" data-q>${optsHTML(s,k)}</div><p class="explain" hidden>${ex}</p></article>`}).join('');
+choice($('litQuiz'),()=>{litN++;$('litScore').textContent=litN+' / 8';if(litN===8)markDone('lit')});
 
-  // ---- Квіз першоджерел ----
-  let s1=0;
-  document.querySelectorAll('[data-q]').forEach(g=>{
-    g.addEventListener('click',e=>{
-      const b=e.target.closest('.opt');if(!b||g.dataset.done)return;
-      if(b.hasAttribute('data-ok')){b.classList.add('ok');g.dataset.done=1;s1++;document.getElementById('score1').textContent=s1+' / 5';g.nextElementSibling.hidden=false}
-      else b.classList.add('bad');
-    });
-  });
+/* ---------- Завдання 2 ---------- */
+const CATS=[['q','Цитата'],['p','Мовна гра'],['b','Біографія'],['s','Сюжет / мотив']];
+const DET=[
+  [25,'q','Футболка з Чужим: «І чужого научайтесь, й свого не цурайтесь»','Цитата з послання Т. Шевченка «І мертвим, і живим…» плюс гра зі словом «Чужий».'],
+  [64,'q','Сковорода і Шевченко як покемони','Підписи під персонажами — цитати, зокрема «Світ ловив мене, та не спіймав» Г. Сковороди.'],
+  [15,'p','«Коти в Україні бувають двох видів: Шевченкіт і Франкотик»','Слова «кіт» і «котик» зливаються з прізвищами класиків.'],
+  [18,'p','«Чому є Івано-Франківськ, а Лесьо-Української немає?»','Жарт побудовано на будові назви міста: ім\'я + прізвище.'],
+  [61,'p','Козак і Чужий: «Чужого не треба»','«Чужий» — і прикметник, і монстр із фільму. Одне слово, два значення.'],
+  [79,'p','«Ну, з тобою каші не звариш» — «Чуєш»','Фразеологізм «каші не звариш» (не домовишся) обіграно в діалозі.'],
+  [68,'b','«Твоє обличчя, коли тебе пас сам Шевченко»','Малий Тарас пас ягнята — про це вірш «Мені тринадцятий минало».'],
+  [65,'b','Комікс про Шевченка й день народження','Факт біографії: Шевченко народився кріпаком, а день народження (9 березня) відзначає вся країна.'],
+  [58,'b','«Синку, ти зв\'язався з поганою компанією. — Мамо, я її заснував»','Жарт про коло друзів і однодумців Шевченка на старому фото.'],
+  [71,'s','«Як я спілкуюся зі свекрухою — і з Карпом»','Мотря з «Кайдашевої сім\'ї»: сварлива зі свекрухою і ніжна з чоловіком.'],
+  [72,'s','«Якщо долі немає, то чому в українського народу вона важка?»','Доля — наскрізний мотив поезії Шевченка.']
+];
+let detN=0;
+$('dets').innerHTML=DET.map(([n,c,cap,why])=>`<article class="det" data-c="${c}">${pic(n,cap)}<div class="body"><span style="font-size:13.5px;font-weight:700;line-height:1.3">${esc(cap)}</span><div class="chips">${CATS.map(([k,t])=>`<button type="button" data-k="${k}">${t}</button>`).join('')}</div><p class="why" hidden>${why}</p></div></article>`).join('');
+$('dets').addEventListener('click',e=>{const b=e.target.closest('.chips button');if(!b)return;const card=b.closest('.det');if(card.classList.contains('solved'))return;
+  if(b.dataset.k===card.dataset.c){b.classList.add('ok');card.classList.add('solved');card.querySelector('.why').hidden=false;detN++;$('detScore').textContent=detN+' / 11';if(detN===DET.length)markDone('detect')}else b.classList.add('bad')});
 
-  // ---- Мовна лабораторія ----
-  const lab=[
-    ['Коли весь клас <mark>приймає участь</mark> у флешмобі','брати участь','приймати участь','Участь беруть, а не приймають: «брати участь».'],
-    ['<mark>Самий кращий</mark> мем про НМТ','найкращий','самий кращий','Найвищий ступінь прикметника утворюємо префіксом най-: «найкращий».'],
-    ['Я, коли <mark>на протязі</mark> уроку чекаю дзвінка','протягом','на протязі','«Протяг» — це рух повітря. Про час кажемо «протягом уроку».'],
-    ['<mark>Вибачаюсь</mark>, але це смішно','перепрошую','вибачаюсь','«Вибачаюсь» означає «вибачаю себе». Правильно: «перепрошую» або «вибачте».'],
-    ['<mark>Рахую</mark>, що цей мем — шедевр','вважаю','рахую','Рахують гроші, а думку висловлюють словом «вважаю».'],
-    ['Яке <mark>співпадіння</mark>: знову контрольна','збіг','співпадіння','Літературна норма — «збіг»: «який збіг обставин».']
-  ];
-  const labEl=document.getElementById('lab');let s2=0;
-  lab.forEach(([q,ok,bad,why],i)=>{
-    const row=document.createElement('div');row.className='lab-row';
-    const opts=Math.random()<.5?[ok,bad]:[bad,ok];
-    row.innerHTML=`<q>${q}</q><div class="pair">${opts.map(o=>`<button class="chip" type="button" data-v="${o}">${o}</button>`).join('')}</div><p class="why" hidden>${why}</p>`;
-    row.querySelector('.pair').addEventListener('click',e=>{
-      const b=e.target.closest('.chip');if(!b||row.dataset.done)return;
-      if(b.dataset.v===ok){b.classList.add('ok');row.dataset.done=1;s2++;document.getElementById('score2').textContent=s2+' / 6';row.querySelector('.why').hidden=false}
-      else b.classList.add('bad');
-    });
-    labEl.appendChild(row);
-  });
+/* ---------- Завдання 3 ---------- */
+const LAB=[
+  [43,'Говориш «протягом», а не «на протязі»?? Іди обійму!',['Норма слововживання','Синоніми','Пунктуація'],'<span class="rule"><span class="chip-w">на протязі уроку</span>→<span class="chip-r">протягом уроку</span></span> Протяг — це рух повітря.'],
+  [111,'Дієприслівниковий зворот: курка між двома голубами «кома — кома»',['Пунктуація','Орфографія','Фразеологізм'],'Дієприслівниковий зворот виділяють комами з обох боків, як курку двоє голубів.'],
+  [28,'Людина-павук: «Оригінальний», «Автентичний», «Самобутній»',['Синоніми','Антоніми','Омоніми'],'Три слова з близьким значенням показують одне на одного, як три однакові павуки.'],
+  [99,'Борщівник, а підпис — «Найжахливіший бур\'ян: більшовик»',['Співзвучні слова (пароніми)','Синоніми','Архаїзми'],'«Борщівник» і «більшовик» звучать схоже, але значать різне. На цьому і тримається жарт.'],
+  [35,'«Не буди в мені звіра. Взагалі мене не буди»',['Фразеологізм, прочитаний буквально','Русизм','Діалектизм'],'Вислів «будити звіра» (розлютити) кіт розуміє дослівно: просто не будіть.'],
+  [101,'«Що таке polish remover?» — Ацетон / Богдан Хмельницький',['Міжмовна омонімія','Синоніми','Неологізм'],'Англійське polish — «лак», а Polish — «польський». Хмельницький «видаляв» поляків.'],
+  [19,'«Помилки роблять вас сильнішими… якщо вони не орфографічні»',['Орфографія','Пунктуація','Лексика'],'Жарт нагадує: орфографічні помилки сили не додають. Перевіряйте написання перед публікацією.'],
+  [14,'«…і відклала все на завтра, а воно настало. Боже, дапамажи»',['Іншомовне вкраплення','Діалектизм','Неологізм'],'«Дапамажы» — білоруське «допоможи». Вкраплення іншої мови робить підпис смішнішим.'],
+  [12,'«Фух, ну і тиждень був! — Нинька вівторок! — ШО?!»',['Розмовні та діалектні слова','Канцеляризми','Терміни'],'«Нинька» (сьогодні) і «шо» — розмовні слова. У мемі доречні, у творі — ні.']
+];
+let labN=0;
+$('lab').innerHTML=LAB.map(([n,q,ops,ex])=>{const [s,k]=mixed(ops);return `<article class="lab-item">${pic(n,q)}<div><q>${esc(q)}</q><div class="opts" data-q>${optsHTML(s,k)}</div></div><p class="explain" hidden>${ex}</p></article>`}).join('');
+choice($('lab'),()=>{labN++;$('labScore').textContent=labN+' / 9';if(labN===LAB.length)markDone('lang')});
 
-  // ---- Копіювання промпта ----
-  const copyBtn=document.getElementById('copyBtn'),pt=document.getElementById('promptText');
-  copyBtn.addEventListener('click',()=>{
-    const done=()=>{copyBtn.textContent='Скопійовано';setTimeout(()=>copyBtn.textContent='Скопіювати промпт',1800)};
-    const sel=()=>{const r=document.createRange();r.selectNodeContents(pt);const s=getSelection();s.removeAllRanges();s.addRange(r);copyBtn.textContent='Виділено: натисни «Копіювати»'};
-    try{navigator.clipboard.writeText(pt.textContent).then(done,sel)}catch(e){sel()}
-  });
+/* ---------- Завдання 4 ---------- */
+const CHR=[
+  [84,'«Це я тут мисливець, а ти — збиральниця!»','Первісна доба'],
+  [53,'Що сказали римляни після смерті Августа? «Škoda Octavia»','14 р. н. е.: «шкода, Октавіане»'],
+  [69,'Княгиня Ольга: «Не жартуйте з вогнем»','945–946 рр.: помста древлянам'],
+  [70,'Данило Галицький: «Князів багато — король один»','1253 р.: коронація Данила'],
+  [92,'Сигізмунд II Август і «посполітєє»','1569 р.: Люблінська унія, Річ Посполита'],
+  [51,'Винниченко: «Я йду своїм шляхом»','1917–1919 рр.: УНР'],
+  [89,'«Не було ні копійок, ні шагів — були купонокарбованці»','1992–1996 рр.: купонокарбованці']
+];
+const order=[];const sh=shuffle(CHR.map((_,i)=>i));
+$('frames').innerHTML=sh.map(i=>{const [n,cap,when]=CHR[i];return `<button class="frame" type="button" data-i="${i}"><span class="ord" hidden></span><span class="ph"><img src="${M(n)}" alt="${esc(cap)}" loading="lazy"></span><span>${esc(cap)}</span><span class="when" hidden>${when}</span></button>`}).join('');
+const frames=[...$('frames').children];
+$('frames').addEventListener('click',e=>{const f=e.target.closest('.frame');if(!f||f.classList.contains('picked'))return;order.push(+f.dataset.i);f.classList.add('picked');const o=f.querySelector('.ord');o.hidden=false;o.textContent=order.length});
+$('chronoCheck').addEventListener('click',()=>{
+  if(order.length<CHR.length){$('chronoMsg').textContent='Розставте всі '+CHR.length+' кадрів.';return}
+  let ok=0;frames.forEach(f=>{const i=+f.dataset.i,pos=order.indexOf(i);const good=pos===i;ok+=good;f.classList.toggle('good',good);f.classList.toggle('badpos',!good);f.querySelector('.when').hidden=false;f.querySelector('.ord').textContent=good?'✓':i+1});
+  $('chronoScore').textContent=ok+' / 7';$('chronoMsg').textContent=ok===7?'Ідеально! Уся шкала правильна.':'Цифри на червоних кадрах — правильне місце.';markDone('chrono');
+});
+$('chronoReset').addEventListener('click',()=>{order.length=0;frames.forEach(f=>{f.className='frame';f.querySelector('.ord').hidden=true;f.querySelector('.when').hidden=true});$('chronoMsg').textContent='';$('chronoScore').textContent='0 / 7'});
 
-  // ---- Чек-лист ----
-  const checks=[...document.querySelectorAll('#checks input')],co=document.getElementById('checkOut');
-  checks.forEach(c=>c.addEventListener('change',()=>{const n=checks.filter(x=>x.checked).length;co.textContent=n+' / 5 перевірено'+(n===5?' · можна публікувати':'')}));
+/* ---------- Мем-музей ---------- */
+const MUS=[
+  [82,'«Homo sapiens go home»','Понад 40 тис. років тому сапієнси прийшли в Європу, де жили неандертальці.'],
+  [52,'Вавилонська вежа: «ламай, ламай»','Біблійний сюжет про змішання мов. Підпис — «суміш» різних мов.'],
+  [93,'«Я не розумію готську»','Готи — германські племена III–V ст., що жили й на території України.'],
+  [74,'Вікінг читає «Занепад і падіння Римської імперії»','476 р.: для «варварів» це щасливий кінець.'],
+  [67,'Ярослав Мудрий: «Мої діти вже в Європі»','XI ст.: доньки князя стали королевами Франції, Угорщини, Норвегії.'],
+  [98,'Сарацини і франки','Доба хрестових походів: як різні народи бачили одне одного.'],
+  [80,'Хрестовий похід і «хрестовий похід сина маминої подруги»','1212 р.: Дитячий хрестовий похід.'],
+  [96,'Середньовічні леви','Художники малювали левів, ніколи їх не бачивши.'],
+  [91,'«Ти признайся мені, звідки в тебе ці чари»','XV–XVII ст.: інквізиція і полювання на відьом.'],
+  [86,'Костянтин XI і гармата','1453 р.: майстер Урбан пропонував гармату Візантії, але її купив султан.'],
+  [94,'«Old money for men»','Шолом, обладунок, шабля: «спадок» воїна княжої та козацької доби.'],
+  [77,'Ієремія Вишневецький про «веганів»','XVII ст.: «веганами» магнат називає селян, які не мали м\'яса на столі.'],
+  [54,'Аристократи за абсолютної монархії','XVII–XVIII ст.: «весела товста собака без особливих претензій».'],
+  [83,'Британія в британських підручниках і в усіх інших','Як по-різному описують одну імперію.'],
+  [81,'«Plato\'s Rave»','IV ст. до н. е.: алегорія печери Платона як вечірка.'],
+  [100,'«Вечірка в стилі 20-х: твої друзі і ти»','1920-ті: для одних джаз, для України — боротьба за незалежність.'],
+  [1,'Найнебезпечніші пастки: українізація','1920–1930-ті: розквіт культури, а потім репресії. Розстріляне відродження.'],
+  [90,'Ленін серед гуцулів','Радянська пропаганда, що «вписувала» вождя в усі куточки.'],
+  [88,'Бджоляр: «Так! Мед»','2004 р.: гра з передвиборчим гаслом «Так! Ющенко!».'],
+  [105,'«Ці руки нічого не крали!»','2004 р.: фраза з передвиборчої кампанії стала мемом.'],
+  [95,'«Історія України» як постер бойовика','Підручник, який хочеться відкрити.']
+];
+$('museum').innerHTML=MUS.map(([n,t,p],i)=>`<figure class="exh" style="margin:0"><div class="frame-g">${pic(n,t+'. '+p)}</div><figcaption class="plaque"><span class="no">ЕКСПОНАТ № ${String(i+1).padStart(2,'0')}</span><b>${esc(t)}</b><p>${esc(p)}</p></figcaption></figure>`).join('');
 
-  // ---- Конструктор мемів ----
-  const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
-  const top=document.getElementById('top'),bottom=document.getElementById('bottom');
-  const bgs={lime:['#b8e04a','#99cc00','#5d8a00'],violet:['#c3a2ef','#9d6bdb','#5b3a8f'],yellow:['#ffe07a','#f7c915','#b38a00'],ink:['#3a3448','#1e1b26','#0b0a10']};
-  let bg='lime',photo=null;
-  function wrap(text,maxW){const words=text.toUpperCase().split(/\s+/).filter(Boolean),lines=[];let cur='';
-    words.forEach(w=>{const t=cur?cur+' '+w:w;if(ctx.measureText(t).width>maxW&&cur){lines.push(cur);cur=w}else cur=t});if(cur)lines.push(cur);return lines}
-  function caption(text,atTop){
-    let size=64,lines;
-    do{ctx.font=`900 ${size}px Unbounded, Rubik, Impact, sans-serif`;lines=wrap(text,720);size-=4}while(lines.length>3&&size>30);
-    size+=4;const lh=size*1.12;
-    ctx.textAlign='center';ctx.lineJoin='round';ctx.lineWidth=size/6;ctx.strokeStyle='#000';ctx.fillStyle='#fff';
-    lines.forEach((l,i)=>{const y=atTop?40+size+i*lh:cv.height-40-(lines.length-1-i)*lh;ctx.strokeText(l,400,y);ctx.fillText(l,400,y)});
-  }
-  function draw(){
-    const [a,b,c]=bgs[bg];
-    if(photo){const s=Math.max(800/photo.width,800/photo.height),w=photo.width*s,h=photo.height*s;ctx.drawImage(photo,(800-w)/2,(800-h)/2,w,h)}
-    else{
-      const g=ctx.createRadialGradient(260,240,40,400,400,620);g.addColorStop(0,a);g.addColorStop(.55,b);g.addColorStop(1,c);ctx.fillStyle=g;ctx.fillRect(0,0,800,800);
-      ctx.globalAlpha=.16;ctx.strokeStyle='#fff';ctx.lineWidth=10;ctx.lineCap='round';ctx.beginPath();
-      for(let t=0;t<26;t+=.05){const r=8+t*14;ctx.lineTo(560+Math.cos(t)*r,560+Math.sin(t)*r)}ctx.stroke();ctx.globalAlpha=1;
-    }
-    caption(top.value,true);caption(bottom.value,false);
-  }
-  [top,bottom].forEach(i=>i.addEventListener('input',draw));
-  document.getElementById('sw').addEventListener('click',e=>{const b=e.target.closest('.sw');if(!b)return;bg=b.dataset.bg;photo=null;document.getElementById('file').value='';
-    document.querySelectorAll('.sw').forEach(x=>x.setAttribute('aria-pressed',x===b));draw()});
-  document.getElementById('file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const img=new Image();img.onload=()=>{photo=img;draw()};img.src=URL.createObjectURL(f)});
-  document.getElementById('makeImg').addEventListener('click',()=>{const o=document.getElementById('outImg');o.src=cv.toDataURL('image/png');o.hidden=false;o.scrollIntoView({block:'nearest',behavior:'smooth'})});
-  draw();
-  if(document.fonts&&document.fonts.load)document.fonts.load('900 64px Unbounded').then(draw,()=>{});
+/* ---------- Завдання 5 ---------- */
+$('phones').innerHTML=[[110,'g1','Розгублений Траволта','Коли вчитель каже: «Це було в минулому домашньому»'],[107,'g2','Шеф посипає сіллю','Коли однокласник додає ще одну кому в дієприслівниковий зворот']].map(([n,id,t,ph])=>`<div class="phone"><div class="notch"></div>${pic(n,t)}<label for="${id}">${t}: ваш підпис</label><input type="text" id="${id}" placeholder="${esc(ph)}"><p>Приклад у полі — придумайте свій.</p></div>`).join('');
+['g1','g2'].forEach(id=>$(id).addEventListener('input',()=>{if($('g1').value.trim().length>3&&$('g2').value.trim().length>3)markDone('gif')}));
 
-  // ---- Рефлексія ----
-  const mood=[...document.querySelectorAll('#mood button')];
-  mood.forEach(b=>b.addEventListener('click',()=>mood.forEach(x=>x.setAttribute('aria-pressed',x===b))));
+/* ---------- Завдання 6: групи ---------- */
+const AICHECK=['Факти, дати й цитати перевірені за підручником або джерелом.','Немає русизмів, калькованих конструкцій і помилок.','Жарт нікого не принижує і не висміює трагедію.','Ми змінили або покращили відповідь ШІ самі.'];
+const GROUPS=[
+  {id:'museum',n:1,col:'var(--yellow)',name:'Мем-музей',role:'історики',mats:null,
+   steps:['Оберіть на стіні «Мем-музей історії» 3 експонати з різних епох.','Для кожного напишіть музейну табличку: дата, подія, чому це смішно.','Попросіть ШІ перевірити ваші дати й факти, а потім перевірте сам ШІ.','Проведіть для класу екскурсію на 45 секунд.'],
+   prompt:'Ти — консультант історичного музею. Перевір факти в трьох табличках до мемів: [вставте свої таблички]. Для кожної: чи правильна дата, чи правильно названо подію, що варто уточнити. Відповідай українською, коротко, з посиланням на тип джерела (підручник, енциклопедія).',
+   product:'3 музейні таблички та екскурсія'},
+  {id:'acc',n:2,col:'var(--lime)',name:'Акаунт класика',role:'літератори',mats:[[78,'Шевченко в поп-арті: «А мене — роблять»'],[66,'Леся Українка серед ікон поп-культури'],[50,'«Правильно робить нички в книгах»: класики й купюри']],
+   steps:['Оберіть автора з програми: Хвильовий, Підмогильний, Багряний, Костенко чи Леся Українка.','Змоделюйте його сторінку в соцмережі: нікнейм, біо в одне речення, аватар.','Придумайте 3 пости-меми за його творами і коментар від іншого письменника.','Зробіть один пост у конструкторі нижче і покажіть класу.'],
+   prompt:'Уяви, що [автор] веде Instagram у 2026 році. Запропонуй нікнейм, біо до 15 слів і 5 ідей мемів за його творами [назви творів]. Не вигадуй цитат: якщо цитуєш, вкажи твір. Пиши літературною українською.',
+   product:'Макет сторінки та 1 мем-пост'},
+  {id:'lang',n:3,col:'#c9b2ef',name:'Мовний патруль',role:'редактори',mats:[[27,'«Коли починаєш чути голоси — але то лише твій вчитель під час онлайн-уроку»'],[39,'«Давайте Хаята відправимо на Євробачення, бо він же буде ходити, поки не піде»'],[48,'«…і працюєш на міському телебаченні: вмикаєш вечірні новини»']],
+   steps:['Знайдіть у мемах-матеріалах мовну гру або слово, яке варто перевірити.','Оберіть 2 правила з уроку: протягом / на протязі, коми при звороті, пароніми.','Створіть 2 меми-нагадування про ці правила (шаблони в конструкторі).','Попросіть ШІ знайти помилки в трьох підписах і перевірте, чи він має рацію.'],
+   prompt:'Ти — коректор. Знайди мовні помилки в цих підписах до мемів: 1) «На протязі уроку я приймав участь у дискусії» 2) «Вибачаюсь, але самий кращий мем мій» 3) «Відкривши підручник мені стало сумно». Поясни кожне виправлення одним реченням з посиланням на правило.',
+   product:'2 меми-правила та список виправлень'},
+  {id:'res',n:4,col:'#ffb48a',name:'Гумор спротиву',role:'медіааналітики',mats:[[112,'Солдат і корабель: сюжет поштової марки 2022 року'],[36,'«Смертельні реліквії»: Гостомель, Буча, Ірпінь'],[37,'«Tomato jar grandma»: бабуся і дрон'],[42,'«Куди преш, москалю?! Я тут вже грядку скопала!»'],[109,'«А вам казали: не на…, а в Україну!» — насіння соняшника'],[104,'Наліпки: «Я в калідорі», «Байрактаріс!», «Степан Пантера»'],[21,'«На скільки ви стресостійкі? — Я з України»'],[17,'Кіт о третій ночі: дали світло'],[49,'«Ну що, опалення ввімкнули?»'],[23,'«Кияни сьогодні…»'],[38,'«Не питай, куди я йду (я йду дахом)»']],
+   steps:['Розкладіть меми на три групи: сміх над ворогом, самоіронія у важкі часи, мистецтво пам\'яті.','Обговоріть: чому «Смертельні реліквії» — не про сміх, а про пам\'ять?','Попросіть ШІ пояснити один мем і перевірте, чи правильно він розповів історію.','Сформулюйте 3 правила етики воєнних мемів.'],
+   prompt:'Поясни, що означає мем [опишіть мем] і на яку подію 2022 року він спирається. Якщо не впевнений у фактах, так і скажи. Відповідай українською, до 80 слів.',
+   product:'Класифікація та 3 правила етики'}
+];
+$('gtabs').innerHTML=GROUPS.map((g,i)=>`<button class="gtab" type="button" role="tab" aria-selected="${i===0}" data-g="${g.id}"><b><span class="gn" style="background:${g.col}">${g.n}</span>${g.name}</b><small>${g.role}</small></button>`).join('');
+$('gpanels').innerHTML=GROUPS.map((g,i)=>`<div class="gpanel" data-p="${g.id}" role="tabpanel"${i?' hidden':''}>
+  <div class="gpanel-head" style="background:${g.col}"><div><span class="mono" style="font-size:12px">ГРУПА ${g.n} · ${g.role.toUpperCase()}</span><h3>${g.name}</h3></div>
+  <div class="gtimer"><output data-t="${g.id}">08:00</output><button class="btn sm" type="button" style="background:var(--ink);color:#fff" data-start="${g.id}">Старт 8 хв</button></div></div>
+  <div class="gpanel-body">
+    <div>
+      <ol class="gsteps">${g.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
+      <p class="product" style="margin-top:14px"><b>ПРОДУКТ:</b> ${g.product}</p>
+      ${g.mats?`<p style="margin-top:14px;font-weight:700;font-size:14px">Матеріали групи</p><div class="mats">${g.mats.map(([n,c])=>pic(n,c)).join('')}</div>`:`<p style="margin-top:14px"><a class="btn ghost sm" href="#museum">До стіни «Мем-музей історії» ↑</a></p>`}
+    </div>
+    <div>
+      <span class="task-n">Крок зі ШІ</span>
+      <div class="prompt" id="pr-${g.id}">${esc(g.prompt)}</div>
+      <button class="btn sm" type="button" data-copy="pr-${g.id}">Скопіювати промпт</button>
+      <p style="margin-top:16px;font-weight:700;font-size:14px">Чек-лист перевірки ШІ</p>
+      <div class="checks" data-chk="${g.id}">${AICHECK.map((c,j)=>`<label><input type="checkbox" id="ck-${g.id}-${j}"> ${c}</label>`).join('')}</div>
+    </div>
+  </div></div>`).join('');
+$('gtabs').addEventListener('click',e=>{const b=e.target.closest('.gtab');if(!b)return;document.querySelectorAll('.gtab').forEach(x=>x.setAttribute('aria-selected',x===b));document.querySelectorAll('.gpanel').forEach(p=>p.hidden=p.dataset.p!==b.dataset.g)});
+const gt={};
+document.addEventListener('click',e=>{
+  const s=e.target.closest('[data-start]');
+  if(s){const id=s.dataset.start,out=document.querySelector(`[data-t="${id}"]`);
+    if(gt[id]){clearInterval(gt[id]);gt[id]=null;s.textContent='Продовжити';return}
+    let left=gt[id+'L']??480;s.textContent='Пауза';
+    gt[id]=setInterval(()=>{left--;gt[id+'L']=left;out.textContent=fmt(Math.max(0,left));if(left<=0){clearInterval(gt[id]);gt[id]=null;s.textContent='Час!'}},1000);}
+  const c=e.target.closest('[data-copy]');
+  if(c){const el=$(c.dataset.copy);const sel=()=>{const r=document.createRange();r.selectNodeContents(el);const g=getSelection();g.removeAllRanges();g.addRange(r);c.textContent='Виділено: скопіюйте вручну'};
+    try{navigator.clipboard.writeText(el.textContent).then(()=>{c.textContent='Скопійовано';setTimeout(()=>c.textContent='Скопіювати промпт',1800)},sel)}catch(err){sel()}}
+});
+document.addEventListener('change',e=>{const box=e.target.closest('[data-chk]');if(!box)return;if([...box.querySelectorAll('input')].every(i=>i.checked))markDone('groups')});
+
+/* ---------- Конструктор ---------- */
+const cv=$('cv'),ctx=cv.getContext('2d'),top=$('top'),bottom=$('bottom');
+const TPL=[{c:['#b8e04a','#99cc00','#5d8a00']},{c:['#c3a2ef','#9d6bdb','#5b3a8f']},{c:['#ffe07a','#f7c915','#b38a00']},{n:10,t:'Четверо на лавці'},{n:4,t:'Пильний погляд'},{n:73,t:'Родинне фото початку XX ст.'}];
+let cur=TPL[0],photo=null;
+$('tpls').innerHTML=TPL.map((t,i)=>`<button class="tpl" type="button" data-t="${i}" aria-pressed="${i===0}" aria-label="${t.n?esc(t.t):'Кольоровий фон'}" style="${t.c?'background:'+t.c[1]:''}">${t.n?`<img src="${M(t.n)}" alt="">`:''}</button>`).join('');
+function wrap(text,maxW){const w=text.toUpperCase().split(/\s+/).filter(Boolean),L=[];let c='';w.forEach(x=>{const t=c?c+' '+x:x;if(ctx.measureText(t).width>maxW&&c){L.push(c);c=x}else c=t});if(c)L.push(c);return L}
+function caption(text,atTop){let size=64,L;do{ctx.font=`900 ${size}px Unbounded, Rubik, Impact, sans-serif`;L=wrap(text,720);size-=4}while(L.length>3&&size>30);size+=4;const lh=size*1.12;
+  ctx.textAlign='center';ctx.lineJoin='round';ctx.lineWidth=size/6;ctx.strokeStyle='#000';ctx.fillStyle='#fff';
+  L.forEach((l,i)=>{const y=atTop?40+size+i*lh:cv.height-40-(L.length-1-i)*lh;ctx.strokeText(l,400,y);ctx.fillText(l,400,y)})}
+function cover(img){const s=Math.max(800/img.width,800/img.height),w=img.width*s,h=img.height*s;ctx.drawImage(img,(800-w)/2,(800-h)/2,w,h)}
+function draw(){
+  ctx.fillStyle='#1e1b26';ctx.fillRect(0,0,800,800);
+  if(photo)cover(photo);
+  else if(cur.c){const [a,b,c]=cur.c,g=ctx.createRadialGradient(260,240,40,400,400,620);g.addColorStop(0,a);g.addColorStop(.55,b);g.addColorStop(1,c);ctx.fillStyle=g;ctx.fillRect(0,0,800,800);
+    ctx.globalAlpha=.16;ctx.strokeStyle='#fff';ctx.lineWidth=10;ctx.lineCap='round';ctx.beginPath();for(let t=0;t<26;t+=.05){const r=8+t*14;ctx.lineTo(560+Math.cos(t)*r,560+Math.sin(t)*r)}ctx.stroke();ctx.globalAlpha=1}
+  else if(cur.img&&cur.img.complete)cover(cur.img);
+  caption(top.value,true);caption(bottom.value,false);
+}
+[top,bottom].forEach(i=>i.addEventListener('input',draw));
+$('tpls').addEventListener('click',e=>{const b=e.target.closest('.tpl');if(!b)return;cur=TPL[+b.dataset.t];photo=null;$('file').value='';
+  document.querySelectorAll('.tpl').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  if(cur.n&&!cur.img){cur.img=new Image();cur.img.onload=draw;cur.img.src=M(cur.n)}draw()});
+$('file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const img=new Image();img.onload=()=>{photo=img;draw()};img.src=URL.createObjectURL(f)});
+$('makeImg').addEventListener('click',()=>{const o=$('outImg');try{o.src=cv.toDataURL('image/png');o.hidden=false;o.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(err){$('makeImg').textContent='Зробіть скриншот полотна'}});
+draw();
+if(document.fonts&&document.fonts.load)document.fonts.load('900 64px Unbounded').then(draw,()=>{});
+
+/* ---------- Рефлексія ---------- */
+voteGrid($('refl'),[[34,'Усе вдалося','Зрозумів і можу пояснити іншим'],[45,'«Все нормально»','Втомився, але тримаюся'],[26,'«Прорахувався, але де?»','Десь заплутався, треба повторити'],[102,'«Тиждень без історичних подій»','Забагато інформації за раз']],()=>markDone('reflex'));
 })();
 </script>
