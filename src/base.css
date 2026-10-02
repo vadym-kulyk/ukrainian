@@ -295,26 +295,8 @@ section.sec{padding-block:52px;position:relative}
 footer{border-top:1px solid var(--line);padding-block:28px;font-size:14px;color:var(--muted)}
 footer .wrap{display:flex;gap:16px;justify-content:space-between;flex-wrap:wrap}
 
-@media (max-width:980px){
-  .moods,.forms,.refl{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .roots{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .gpanel-body,.maker,.hw{grid-template-columns:minmax(0,1fr)}
-  .bento{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .s2,.s3,.s4,.s6{grid-column:span 2}
-  .meta{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .mark.r{right:-30%;top:-6%;width:70%;opacity:.08}
-  .mark.l{left:-30%;bottom:-8%;width:62%;opacity:.08}
-  .brand{display:none}
-  .steps small{display:none}
-}
-@media (max-width:620px){
-  .anat{grid-template-columns:minmax(0,1fr)}
-  .anat .arrow{transform:rotate(90deg);justify-self:center}
-  .phones{grid-template-columns:minmax(0,1fr)}
-  .lab-item{grid-template-columns:90px minmax(0,1fr)}
-  .moods{gap:14px}
-  .done-pill{display:none}
-}
+
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
