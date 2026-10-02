@@ -525,6 +525,12 @@ main{font-size:calc(19*var(--u))}
 .title-slide{background:radial-gradient(50% 60% at 85% 20%,color-mix(in srgb,var(--violet) 40%,transparent),transparent 70%),radial-gradient(45% 55% at 10% 90%,color-mix(in srgb,var(--lime) 45%,transparent),transparent 70%),radial-gradient(35% 40% at 60% 100%,color-mix(in srgb,var(--yellow) 40%,transparent),transparent 70%),var(--bg);padding-block:calc(80*var(--u)) calc(70*var(--u))!important}
 .title-slide h1{font-size:clamp(calc(48*var(--u)),8.5vw,calc(132*var(--u)))!important}
 .title-slide .lead{font-size:clamp(calc(19*var(--u)),2vw,calc(26*var(--u)))!important}
+.tgrid{display:grid;grid-template-columns:1fr calc(340*var(--u));gap:calc(48*var(--u));align-items:center;position:relative}
+.qr{background:#fff;border:calc(3*var(--u)) solid var(--ink);border-radius:calc(24*var(--u));padding:calc(16*var(--u)) calc(16*var(--u)) calc(12*var(--u));box-shadow:calc(8*var(--u)) calc(8*var(--u)) 0 var(--lime);text-align:center}
+.qr .pic{aspect-ratio:1;border-radius:calc(12*var(--u));background:#fff;width:100%}
+.qr .pic img{object-fit:contain}
+.qr b{display:block;margin-top:calc(8*var(--u));font-family:Unbounded,sans-serif;font-size:calc(18*var(--u));color:#16131c}
+@media (max-width:980px){.tgrid{grid-template-columns:1fr}.qr{max-width:calc(300*var(--u));margin-inline:auto}}
 .card,.form,.qcard,.eth,.det,.lab-item,.pola,.ticket,.gpanel{border-radius:calc(22*var(--u));box-shadow:0 calc(22*var(--u)) calc(44*var(--u)) -28px color-mix(in srgb,var(--violet) 70%,transparent)}
 .pic{border-radius:calc(14*var(--u))}
 main .opt{font-size:calc(16*var(--u));padding:calc(10*var(--u)) calc(13*var(--u));border-radius:calc(12*var(--u))}
@@ -625,11 +631,13 @@ const subj=(...a)=>`<span class="subj">${a.map(x=>({m:'<i class="m">мова</i>
 
 /* 1. Титул */
 add('start','title-slide',`<img class="mark r" src="${SPIRAL}" alt=""><img class="mark l" src="${FEATHER}" alt="">
+<div class="tgrid"><div>
 <img class="logo" src="${LOGO}" alt="Midgard" style="margin-bottom:calc(6*var(--u));position:relative">
 <div class="tags" style="margin:0;position:relative"><span class="sticker g">Українська мова</span><span class="sticker y">Література</span><span class="sticker v">Історія</span></div>
 <h1>Мем — це <span class="hl">фольклор</span><br><span class="out">XXI</span> століття</h1>
 <p class="lead">Інтегрований урок для 11 класу: від давньоєгипетських остраконів до «6-7», від «протягом» до Будапештського меморандуму.</p>
-<div class="keys"><span>Натисніть на будь-який мем, щоб відкрити його на весь екран</span></div>`);
+<div class="keys"><span>Натисніть на будь-який мем, щоб відкрити його на весь екран</span></div></div>
+<div class="qr"><button class="pic" type="button" data-zoom="qr" data-cap="Відскануйте QR-код" aria-label="Збільшити QR-код"><img src="${M('qr')}" alt="QR-код до уроку"></button><b>Відскануйте QR-код 📱</b></div></div>`);
 
 /* 2. Розминка */
 const MOODS=[[7,'Кіану на лавці','Сумую за канікулами'],[6,'Математичні розрахунки','Нічого не зрозуміло, але цікаво'],[32,'Керміт за кермом','Погнали, я готовий!'],[30,'Задоволений Пікар','Нарешті щось цікаве'],[29,'Ді Капріо крокує','Упевнений у собі'],[2,'Мружиться над папірцем','Придивляюся, що тут'],[5,'Шокований Кіану','Що взагалі відбувається?'],[13,'Лисиця на стільці','Ще сплю, будьте ніжні']];
