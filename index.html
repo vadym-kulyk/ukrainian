@@ -512,7 +512,7 @@ main .explain{font-size:calc(14*var(--u))}
 /* ===== Оновлений дизайн: крупніше, яскравіше ===== */
 .wrap{max-width:calc(1300*var(--u))}
 main{font-size:calc(19*var(--u))}
-.slide{padding-block:calc(72*var(--u))}
+.slide{padding-block:calc(72*var(--u));overflow-x:clip}
 .slide h2{font-size:clamp(calc(32*var(--u)),4.4vw,calc(62*var(--u)));letter-spacing:-.02em;line-height:1.05}
 .slide .sub{font-size:calc(20*var(--u));margin-top:calc(12*var(--u))}
 .slide .eyebrow{font-size:calc(13.5*var(--u));letter-spacing:.12em}
@@ -538,6 +538,40 @@ main .opt{font-size:calc(16*var(--u));padding:calc(10*var(--u)) calc(13*var(--u)
 .steps .seg{height:calc(12*var(--u))}
 .steps li.ok .seg{border-color:var(--right)}
 .btn{font-size:calc(15*var(--u));padding:calc(11*var(--u)) calc(20*var(--u))}
+/* ===== Крупніше в завданнях, менше елементів у ряду ===== */
+.c4{grid-template-columns:repeat(auto-fill,minmax(min(100%,calc(380*var(--u))),1fr))!important}
+.c5{grid-template-columns:repeat(auto-fill,minmax(min(100%,calc(380*var(--u))),1fr))!important}
+.dets2,.pads2{grid-template-columns:repeat(auto-fill,minmax(min(100%,calc(560*var(--u))),1fr))!important;gap:calc(28*var(--u))!important}
+.det .dcap{font-size:calc(21*var(--u));font-weight:800;line-height:1.3}
+.det .body{padding:calc(18*var(--u))!important;gap:calc(14*var(--u))!important}
+.det .chips{gap:calc(10*var(--u))}
+.det .chips button{font-size:calc(17*var(--u))!important;padding:calc(12*var(--u)) calc(6*var(--u))!important;border-radius:calc(12*var(--u))}
+.det .why{font-size:calc(17*var(--u))}
+.pad{padding:calc(14*var(--u)) calc(14*var(--u)) calc(18*var(--u));gap:calc(12*var(--u))}
+.pad input{font-size:calc(19*var(--u));padding:calc(13*var(--u)) calc(14*var(--u))}
+.lab-item{grid-template-columns:calc(200*var(--u)) minmax(0,1fr)!important;padding:calc(16*var(--u))!important;gap:calc(18*var(--u))!important}
+.lab-item q{font-size:calc(19*var(--u))!important}
+.lab-item .opts{grid-template-columns:minmax(0,1fr)!important}
+.lab-item .opts .opt{font-size:calc(16*var(--u))!important;padding:calc(10*var(--u)) calc(12*var(--u))!important}
+.lab-item .explain{font-size:calc(16*var(--u))!important}
+.qcard blockquote{font-size:calc(20*var(--u))}
+.qcard .opt,.ticket .opt,.fact .tf .opt{font-size:calc(17*var(--u))}
+.fact .claim{font-size:calc(20*var(--u))}
+.eth .body span{font-size:calc(17*var(--u))!important}
+.ticket .body span{font-size:calc(16*var(--u))!important}
+.qcard .explain,.ticket .explain,.fact .explain{font-size:calc(16*var(--u))}
+/* Декор */
+.slide>.wrap>.bignum{position:absolute;right:-6px;top:-64px;font-family:var(--f-display);font-weight:900;font-size:clamp(calc(120*var(--u)),14vw,calc(230*var(--u)));line-height:1;color:transparent;-webkit-text-stroke:calc(3*var(--u)) color-mix(in srgb,var(--violet) 55%,transparent);opacity:.55;pointer-events:none;user-select:none;z-index:0}
+.band-night>.wrap>.bignum{-webkit-text-stroke-color:color-mix(in srgb,var(--lime) 60%,transparent)}
+.shead{position:relative;z-index:1}
+.slide>.wrap>.body,.slide>.wrap>.legend{position:relative;z-index:1}
+.slide::before{content:"";position:absolute;width:calc(180*var(--u));height:calc(180*var(--u));border-radius:50%;left:-60px;top:40%;background:conic-gradient(from 90deg,var(--lime),var(--yellow),var(--violet),var(--lime));opacity:.14;filter:blur(calc(2*var(--u)));pointer-events:none}
+.slide:nth-child(even)::before{left:auto;right:-70px;top:65%}
+.slide::after{content:"✦";position:absolute;right:4%;bottom:calc(28*var(--u));font-size:calc(46*var(--u));color:var(--violet);opacity:.35;pointer-events:none;transform:rotate(12deg)}
+.slide:nth-child(3n)::after{content:"✺";color:var(--lime);left:4%;right:auto}
+.slide:nth-child(3n+1)::after{content:"✸";color:var(--yellow)}
+.slide h2{text-shadow:0 calc(2*var(--u)) 0 color-mix(in srgb,var(--lime) 35%,transparent)}
+.band-night h2{text-shadow:none}
 @media (max-width:980px){
   .dawkins{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.dawkins>div:last-child{grid-column:1/-1}
   .memo-wrap{grid-template-columns:minmax(0,1fr)}
@@ -586,7 +620,7 @@ const scoreEl=k=>`<span class="pill" data-score="${k}">${badge(k)}</span>`;
 const SECS=[['start','Старт'],['warm','Розминка'],['theory','Теорія'],['hist','Історія'],['forms','Форми'],['memo','Мем-мемо'],['work','Майстерня'],['quote','Цитати'],['detect','Детектив'],['film','Кіно'],['lab','Мова'],['truth','Правда/міф'],['ethics','Етика'],['gif','GIF'],['groups','Групи'],['ai','ШІ-батл'],['final','Підсумок']];
 const S=[];
 const add=(sec,cls,html)=>S.push({sec,cls,html});
-const head=(eye,title,sub,score)=>`<div class="shead"><div><div class="eyebrow">${eye}</div><h2>${title}</h2>${sub?`<p class="sub">${sub}</p>`:''}</div>${score||''}</div>`;
+const head=(eye,title,sub,score)=>{const m=/^Завдання (\d+)/.exec(eye);return `${m?`<span class="bignum" aria-hidden="true">${m[1].padStart(2,'0')}</span>`:''}<div class="shead"><div><div class="eyebrow">${eye}</div><h2>${title}</h2>${sub?`<p class="sub">${sub}</p>`:''}</div>${score||''}</div>`};
 const subj=(...a)=>`<span class="subj">${a.map(x=>({m:'<i class="m">мова</i>',l:'<i class="lt">література</i>',h:'<i class="h">історія</i>'})[x]).join('')}</span>`;
 
 /* 1. Титул */
@@ -681,9 +715,9 @@ chunk(QUO,99).forEach((part,j)=>add('quote','s-violet',head('Завдання 4 
 
 /* 10. Мем-детектив */
 const CATS=[['q','Цитата'],['p','Мовна гра'],['b','Біографія'],['s','Твір']];
-const DET=[[25,'q','Футболка з Чужим: «І чужого научайтесь, й свого не цурайтесь»','Цитата з послання Т. Шевченка «І мертвим, і живим…» плюс гра зі словом «Чужий».'],[64,'q','Сковорода і Шевченко як покемони','Підписи — цитати, зокрема «Світ ловив мене, та не спіймав».'],[15,'p','«Коти в Україні: Шевченкіт і Франкотик»','Слова «кіт» і «котик» зливаються з прізвищами класиків.'],[18,'p','«Чому є Івано-Франківськ, а Лесьо-Української немає?»',"Гра з будовою назви міста: ім'я + прізвище."],[61,'p','Козак і Чужий: «Чужого не треба»','«Чужий» — і прикметник, і монстр із фільму.'],[79,'p','«Ну, з тобою каші не звариш» — «Чуєш»','Фразеологізм «каші не звариш» обіграно в діалозі.'],['z171','p','«Мікрохвильовий 1893» з портретом','Прізвище Хвильового + «мікрохвильовка»; 1893 — рік народження.'],['z154','p','«Алло, це Хвильовий? — Не хвилюйтесь»','Співзвучність прізвища і слова «хвилюватися».'],[68,'b','«Твоє обличчя, коли тебе пас сам Шевченко»','Малий Тарас пас ягнята — вірш «Мені тринадцятий минало».'],[65,'b','Комікс про Шевченка й день народження','Шевченко народився кріпаком, а 9 березня відзначає вся країна.'],[58,'b',"«Ти зв'язався з поганою компанією. — Мамо, я її заснував»",'Жарт про коло друзів і однодумців Шевченка.'],['z48','b','«Це Пантелеймон Куліш, а це Микола Куліш!»','Два різні письменники: П. Куліш (XIX ст.) і М. Куліш (драматург 1920-х).'],['z197','b','Джин: «Я не можу зробити тебе ще видатнішим»','Жарт про масштаб постаті Шевченка.'],[71,'s','«Як я спілкуюся зі свекрухою — і з Карпом»',"Мотря з «Кайдашевої сім'ї»: сварлива зі свекрухою і ніжна з чоловіком."],[72,'s','«Якщо долі немає, то чому вона важка?»','Доля — наскрізний мотив поезії Шевченка.'],['z199','s','«Катерина, яка побачила москаля з вікна» — тікає','Перевернутий сюжет поеми «Катерина».'],['z203','s',"«Хтось спойлернув тобі «Кайдашеву сім'ю»»",'Фрази зі сварок Кайдашів: «нащо він таке робе?», «тільки не вибити око».'],['z202','s','«Недостача журби в крові» — рецепт: «Кобзар»','Журба й туга — провідні мотиви лірики Шевченка.'],['z162','s','Шевченко обирає кобзу, а не балалайку','Кобза — символ «Кобзаря» і пісенної традиції.'],['z209','s','«Спінер української дівчини» з гарбузів',"Гарбуз — відмова сватам, як у «Сватанні на Гончарівці»."],['z210','s','«Не кличте мене до міста. У мене Intermezzo!»','Герой новели Коцюбинського тікає від міста до природи.'],['z54','s','«Коли прочитав усю «Чорну раду»»','Великий історичний роман Куліша: дочитати — подвиг.']];
+const DET=[[25,'q','Футболка з Чужим: «І чужого научайтесь, й свого не цурайтесь»','Цитата з послання Т. Шевченка «І мертвим, і живим…» плюс гра зі словом «Чужий».'],[64,'q','Сковорода і Шевченко як покемони','Підписи — цитати, зокрема «Світ ловив мене, та не спіймав».'],[15,'p','«Коти в Україні: Шевченкіт і Франкотик»','Слова «кіт» і «котик» зливаються з прізвищами класиків.'],[18,'p','«Чому є Івано-Франківськ, а Лесьо-Української немає?»',"Гра з будовою назви міста: ім'я + прізвище."],['z154','p','«Алло, це Хвильовий? — Не хвилюйтесь»','Співзвучність прізвища і слова «хвилюватися».'],[68,'b','«Твоє обличчя, коли тебе пас сам Шевченко»','Малий Тарас пас ягнята — вірш «Мені тринадцятий минало».'],[58,'b',"«Ти зв'язався з поганою компанією. — Мамо, я її заснував»",'Жарт про коло друзів і однодумців Шевченка.'],['z48','b','«Це Пантелеймон Куліш, а це Микола Куліш!»','Два різні письменники: П. Куліш (XIX ст.) і М. Куліш (драматург 1920-х).'],[71,'s','«Як я спілкуюся зі свекрухою — і з Карпом»',"Мотря з «Кайдашевої сім'ї»: сварлива зі свекрухою і ніжна з чоловіком."],['z199','s','«Катерина, яка побачила москаля з вікна» — тікає','Перевернутий сюжет поеми «Катерина».']];
 TESTS.detect.n=DET.length;
-chunk(DET,99).forEach((part,j)=>add('detect','grid-paper',head('Завдання 5 · у парах '+subj('l','m'),'Мем-детектив: на чому тримається жарт?'+'','',scoreEl('detect'))+`<div class="legend" style="margin:0"><span class="cat c-q">Цитата</span><span class="cat c-p">Мовна гра</span><span class="cat c-b">Біографія автора</span><span class="cat c-s">Твір: сюжет або мотив</span></div><div class="body g c4">${part.map(([n,c,cap,why])=>`<article class="det" data-c="${c}">${pic(n,cap,'a21')}<div class="body"><span style="font-size:calc(13.5*var(--u));font-weight:700;line-height:1.3">${esc(cap)}</span><div class="chips">${CATS.map(([k,t])=>`<button type="button" data-k="${k}">${t}</button>`).join('')}</div><p class="why" hidden>${why}</p></div></article>`).join('')}</div>`));
+chunk(DET,99).forEach((part,j)=>add('detect','grid-paper',head('Завдання 5 · у парах '+subj('l','m'),'Мем-детектив: на чому тримається жарт?'+'','',scoreEl('detect'))+`<div class="legend" style="margin:0"><span class="cat c-q">Цитата</span><span class="cat c-p">Мовна гра</span><span class="cat c-b">Біографія автора</span><span class="cat c-s">Твір: сюжет або мотив</span></div><div class="body g dets2">${part.map(([n,c,cap,why])=>`<article class="det" data-c="${c}">${pic(n,cap,'a169')}<div class="body"><span class="dcap">${esc(cap)}</span><div class="chips">${CATS.map(([k,t])=>`<button type="button" data-k="${k}">${t}</button>`).join('')}</div><p class="why" hidden>${why}</p></div></article>`).join('')}</div>`));
 
 /* 11. Мовна лабораторія */
 const LAB=[[43,'Говориш «протягом», а не «на протязі»?? Іди обійму!',['Норма слововживання','Синоніми','Пунктуація'],'<span class="chip-w">на протязі уроку</span> → <span class="chip-r">протягом уроку</span>. Протяг — це рух повітря.'],['z39','Вчителька української мови виправляє вивіски',['Кальки й порушення норм','Діалектизми','Архаїзми'],'<span class="chip-w">самий більший</span> → <span class="chip-r">найбільший</span>, <span class="chip-w">на протязі дня</span> → <span class="chip-r">протягом дня</span>'],['z55',"«У Кайдашевій сім'ї 32 синоніма до слова говорити»",['Помилка: має бути «32 синоніми»','Помилка: має бути «Кайдашиній»','Помилок немає'],'Після два, три, чотири (і складених на них) — називний відмінок множини: <span class="chip-w">32 синоніма</span> → <span class="chip-r">32 синоніми</span>.'],[12,'«Фух, ну і тиждень був! — Нинька вівторок! — ШО?!»',['Розмовні та діалектні слова','Канцеляризми','Терміни'],'«Нинька» (сьогодні) і «шо» — розмовні слова. У мемі доречні, у творі — ні.'],[111,'Дієприслівниковий зворот: курка між голубами «кома — кома»',['Пунктуація','Орфографія','Фразеологізм'],'Дієприслівниковий зворот виділяють комами з обох боків.'],[28,'«Оригінальний», «Автентичний», «Самобутній»',['Синоніми','Антоніми','Омоніми'],'Три слова з близьким значенням показують одне на одного.'],['z159','«У мене немає депресії, зате є: туга, журба, скруха…»',['Синонімічний ряд','Антоніми','Терміни'],'Понад двадцять синонімів смутку — багатство мови як жарт.'],[99,"Борщівник, а підпис — «Найжахливіший бур'ян: більшовик»",['Пароніми','Синоніми','Архаїзми'],'«Борщівник» і «більшовик» звучать схоже, але значать різне.'],[35,'«Не буди в мені звіра. Взагалі мене не буди»',['Фразеологізм буквально','Русизм','Діалектизм'],'Вислів «будити звіра» кіт розуміє дослівно.'],[101,'«Що таке polish remover?» — Ацетон / Хмельницький',['Міжмовна омонімія','Синоніми','Неологізм'],'Англійське polish — «лак», а Polish — «польський».'],['z205','«Немає. Інфа сотка» — на купюрі 100 гривень',['Багатозначне розмовне слово','Архаїзм','Термін'],'«Сотка» — і сто гривень, і «сто відсотків».'],['z68','«Знов бавовна — гарно»',['Евфемізм і гра з перекладом','Діалектизм','Антоніми'],'«Бавовна» — переклад російського «хлопок», яким пропаганда називала вибухи.'],['z19','«Йой, а що так можна було?»',['Діалектний вигук','Канцеляризм','Термін'],'«Йой» — західноукраїнський вигук здивування.'],[19,'«Помилки роблять вас сильнішими… якщо не орфографічні»',['Орфографія','Пунктуація','Лексика'],'Перевіряйте написання перед публікацією.'],[14,'«…відклала все на завтра, а воно настало. Боже, дапамажи»',['Іншомовне вкраплення','Діалектизм','Неологізм'],'«Дапамажы» — білоруське «допоможи».'],['z128','«Найважча мова — українська: 50% населення не може її вивчити»',['Іронія про мовну ситуацію','Статистика','Реклама'],'Гірка іронія: вивчити свою мову — справа вибору, а не таланту.']];
@@ -705,7 +739,7 @@ add('gif','s-violet',head('Завдання 10 · індивідуально '+s
 
 /* 15. Майстерня шаблонів */
 const PADS=[['z0','Ді Капріо сміється («Джанго вільний»)',"Коли кажуть, що «Кайдашева сім'я» — про ідеальну родину"],['z1','Ніколас Кейдж усміхається','Коли зрозумів, хто такий «я» в «Я (Романтиці)»'],['z23','Фрай мружиться: «Не впевнений…»','Не впевнений, це Пантелеймон чи Микола Куліш'],['z24','Брюс Беннер і Тоні Старк','Неокласики, коли футуристи читають вірші'],['z50','Рік і Карл біля стіни','Двоє героїв і одна стіна: придумайте діалог'],['z74','Подвійний фейспалм','Коли написав «на протязі року» у творі'],[75,'Обери свою особистість: 9 картинок',"П'ятирічний я обрав би бути…"],['z27','«Сьогодні в програмі» з телешоу','Сьогодні в програмі: …'],['z5','Доге: оригінальне фото Кабосу','Дуже класика. Такий Котляревський. Вау'],['z53','Хаскі, що знає більше','Коли прочитав твір, а не короткий переказ']];
-add('work','s-yellow',head('Завдання 3 · у парах · творчо '+subj('l','m'),'Майстерня шаблонів','Оберіть шаблон і напишіть підпис про твір чи автора з програми 11 класу: смішно, грамотно, зрозуміло тим, хто читав.','<span class="pill" id="padScore">0 підписів</span>')+`<div class="body pads g c5">${PADS.map(([n,t,ph],i)=>`<div class="pad">${pic(n,t,'a169')}<b>${esc(t)}</b><input type="text" id="pad${i}" placeholder="${esc(ph)}" aria-label="Підпис до шаблону: ${esc(t)}"></div>`).join('')}</div>`);
+add('work','s-yellow',head('Завдання 3 · у парах · творчо '+subj('l','m'),'Майстерня шаблонів','Оберіть шаблон і напишіть підпис про твір чи автора з програми 11 класу: смішно, грамотно, зрозуміло тим, хто читав.','<span class="pill" id="padScore">0 підписів</span>')+`<div class="body pads g pads2">${PADS.map(([n,t,ph],i)=>`<div class="pad">${pic(n,t,'a169')}<input type="text" id="pad${i}" placeholder="${esc(ph)}" aria-label="Підпис до шаблону: ${esc(t)}"></div>`).join('')}</div>`);
 
 /* 16. Групи */
 const AICHECK=['Продукт готовий, його можна показати класу.','Факти й дати перевірені за підручником.','Немає русизмів, калькованих конструкцій і помилок.','Жарт нікого не принижує і не висміює трагедію.'];
@@ -833,7 +867,7 @@ document.addEventListener('change',e=>{const box=e.target.closest('[data-chk]');
 
 /* Конструктор */
 const cv=$('cv'),ctx=cv.getContext('2d'),top=$('top'),bottom=$('bottom');
-const TPL=[{c:['#b8e04a','#99cc00','#5d8a00']},{c:['#c3a2ef','#9d6bdb','#5b3a8f']},{c:['#ffe07a','#f7c915','#b38a00']},{n:10,t:'Четверо на лавці'},{n:4,t:'Пильний погляд'},{n:73,t:'Родинне фото початку XX ст.'}];
+const TPL=[{c:['#b8e04a','#99cc00','#5d8a00']},{c:['#c3a2ef','#9d6bdb','#5b3a8f']},{c:['#ffe07a','#f7c915','#b38a00']},{n:10,t:'Четверо на лавці'},{n:4,t:'Пильний погляд'},{n:73,t:'Родинне фото початку XX ст.'},...PADS.map(([n,t])=>({n,t}))];
 let tcur=TPL[0],photo=null;
 $('tpls').innerHTML=TPL.map((t,i)=>`<button class="tpl" type="button" data-t="${i}" aria-pressed="${i===0}" aria-label="${t.n?esc(t.t):'Кольоровий фон'}" style="${t.c?'background:'+t.c[1]:''}">${t.n?`<img src="${M(t.n)}" alt="">`:''}</button>`).join('');
 function wrap(text,maxW){const w=text.toUpperCase().split(/\s+/).filter(Boolean),L=[];let c='';w.forEach(x=>{const t=c?c+' '+x:x;if(ctx.measureText(t).width>maxW&&c){L.push(c);c=x}else c=t});if(c)L.push(c);return L}
