@@ -59,14 +59,17 @@ function levelOf(xp) {
 }
 
 /* ---------- підрахунки ---------- */
-function partNow(st) { return st ? Object.values(st.ans || {}).filter(a => a.ok).length : 0; }
+const ptsOf = a => (a.pts != null ? a.pts : a.ok ? 1 : 0);
+const r1 = n => Math.round(n * 10) / 10;
+const fmtN = n => String(r1(n)).replace(".", ",");
+function partNow(st) { return st ? r1(Object.values(st.ans || {}).reduce((x, a) => x + ptsOf(a), 0)) : 0; }
 function storyStats(p, s) {
   let total = 0, best = 0, done = 0, perfect = 0;
   s.parts.forEach((pt, i) => {
     total += pt.q.length;
     const st = p.parts[pk(s.id, i)];
     if (!st) return;
-    best += Math.max(st.best || 0, partNow(st));
+    best = r1(best + Math.max(st.best || 0, partNow(st)));
     if (st.cnt) done++;
     if (st.best === pt.q.length) perfect++;
   });
@@ -78,7 +81,7 @@ function stats(p) {
   const c = { xp: 0, answered: 0, correct: 0, partsDone: 0, perfect: 0, storiesDone: 0, openGood: 0, openDeep: 0, openStoryAll: false, per: {} };
   for (const s of STORIES) {
     const ss = storyStats(p, s); c.per[s.id] = ss;
-    c.xp += ss.best * 10 + ss.perfect * 20 + Math.round(ss.openSum * 0.3) + (ss.complete ? 100 : 0);
+    c.xp += Math.round(ss.best * 10) + ss.perfect * 20 + Math.round(ss.openSum * 0.3) + (ss.complete ? 100 : 0);
     c.partsDone += ss.done; c.perfect += ss.perfect; c.openGood += ss.openGood; c.openDeep += ss.openDeep;
     if (ss.complete) c.storiesDone++;
     if (s.open.length && ss.openGood === s.open.length) c.openStoryAll = true;
@@ -299,7 +302,7 @@ function levelCard(c) {
     <div class="bar" style="margin:8px 0 4px"><i style="width:${c.level.pct}%"></i></div>
     <span class="mono muted" style="font-size:12px">${c.xp} XP${c.level.to ? ` · до наступного ${c.level.to - c.xp}` : " · найвищий рівень"}</span></div></div>
     <div class="stats"><div class="stat"><span class="n">${c.partsDone}</span><span class="l">${plural(c.partsDone, "частину", "частини", "частин")} пройдено</span></div>
-    <div class="stat"><span class="n">${c.correct}</span><span class="l">правильних відповідей</span></div>
+    <div class="stat"><span class="n">${Math.round(c.correct)}</span><span class="l">правильних відповідей</span></div>
     <div class="stat"><span class="n">${c.streak}🔥</span><span class="l">${plural(c.streak, "день", "дні", "днів")} поспіль</span></div></div></section>`;
 }
 function vHome() {
@@ -327,20 +330,20 @@ function vStory(s) {
   return `<section class="hero"><img class="mark m1" src="img/spiral.png" alt="">
     <span class="eyebrow">Історія з книги «Месопотамія»</span><h1><span>${esc(s.title)}</span></h1><p class="sub">${esc(s.sub)}</p>
     <div class="bar"><i style="width:${ss.pct}%"></i></div>
-    <span class="mono muted" style="font-size:12px">Тести: ${ss.best}/${ss.total} · Відкриті: ${ss.openGood}/${s.open.length} · Бездоганних частин: ${ss.perfect}</span></section>
+    <span class="mono muted" style="font-size:12px">Тести: ${fmtN(ss.best)}/${ss.total} · Відкриті: ${ss.openGood}/${s.open.length} · Бездоганних частин: ${ss.perfect}</span></section>
     ${s.fragment ? `<div class="note"><b>Це ознайомчий фрагмент</b><span>${esc(s.fragment)}</span></div>` : ""}
     <div class="sec-h"><h2>Частини</h2><span class="mono">по ${s.parts[0].q.length} запитань</span></div>
     <div class="parts">${s.parts.map((pt, i) => { const st = p.parts[pk(s.id, i)], n = pt.q.length, now = st ? Object.keys(st.ans || {}).length : 0;
       const cls = st && st.cnt ? "done" : now ? "part" : "";
       return `<a class="pitem ${cls}" href="#/s/${s.id}/p/${i}"><span class="num">${st && st.cnt ? "✓" : i + 1}</span><span><b>${esc(pt.title)}</b>${pt.theme ? `<small>${esc(pt.theme)}</small>` : ""}</span>
-      <span class="cnt">${st && st.cnt ? `${st.best}/${n}` : now ? `${now}/${n}…` : `0/${n}`}</span></a>`; }).join("")}
+      <span class="cnt">${st && st.cnt ? `${fmtN(st.best)}/${n}` : now ? `${now}/${n}…` : `0/${n}`}</span></a>`; }).join("")}
     ${s.open.length ? `<a class="pitem ${ss.openGood === s.open.length ? "done" : ss.openGood ? "part" : ""}" href="#/s/${s.id}/open"><span class="num">✎</span><span><b>Відкриті питання</b><small>Пиши своїми словами — перевірка за ключовими ідеями</small></span><span class="cnt">${ss.openGood}/${s.open.length}</span></a>` : ""}
     </div>
     <div class="row"><a class="btn ghost" href="#/">← Усі історії</a></div>`;
 }
 
 /* ---------- частина ---------- */
-const KIND = { single: "Один варіант", device: "Художній засіб", multi: "Кілька варіантів", tf: "Правда чи неправда", input: "Впиши відповідь", quote: "Знайди в тексті", match: "Відповідність", order: "Послідовність" };
+const KIND = { single: "Один варіант", device: "Художній засіб", multi: "Кілька варіантів · частковий бал", tf: "Правда чи неправда", input: "Впиши відповідь", quote: "Знайди в тексті", match: "Відповідність", order: "Послідовність" };
 function getPart(p, s, i) {
   const k = pk(s.id, i);
   if (!p.parts[k]) p.parts[k] = { ans: {}, att: 1, cnt: 0, best: 0, hist: [], t0: null };
@@ -353,11 +356,11 @@ function vPart(s, i) {
   return `<nav class="chips">${s.parts.map((_, k) => { const x = p.parts[pk(s.id, k)]; return `<a class="chip ${k === i ? "on" : ""} ${x && x.cnt ? "done" : ""}" href="#/s/${s.id}/p/${k}"><span class="d">${x && x.cnt ? "✓" : k + 1}</span>${k === i ? esc(s.parts[k].title) : ""}</a>`; }).join("")}
     ${s.open.length ? `<a class="chip" href="#/s/${s.id}/open"><span class="d">✎</span>Відкриті</a>` : ""}</nav>
     <div class="phead"><span class="eyebrow"><a href="#/s/${s.id}">${esc(s.title)}</a> · частина ${i + 1} з ${s.parts.length}</span><h2>${esc(pt.title)}</h2>
-    <div class="tags">${pt.theme ? `<span class="tag">${esc(pt.theme)}</span>` : ""}<span class="tag g">${answered}/${n} · ${ok} правильно</span>${st.cnt ? `<span class="tag y">найкраще: ${st.best}/${n}</span>` : ""}${st.att > 1 ? `<span class="tag">спроба ${st.att}</span>` : ""}</div></div>
+    <div class="tags">${pt.theme ? `<span class="tag">${esc(pt.theme)}</span>` : ""}<span class="tag g">${answered}/${n} · балів: ${fmtN(ok)}</span>${st.cnt ? `<span class="tag y">найкраще: ${fmtN(st.best)}/${n}</span>` : ""}${st.att > 1 ? `<span class="tag">спроба ${st.att}</span>` : ""}</div></div>
     <div id="ptext"></div>
     <div class="qhead"><h3>Перевір себе</h3><span class="mono muted" style="font-size:12px">відповідь зараховується з першої перевірки</span></div>
     ${pt.q.map((q, qi) => vQ(s, i, qi, q, st)).join("")}
-    ${finished ? `<section class="result"><span class="eyebrow">Результат спроби ${st.att}</span><span class="big">${ok}/${n}</span>
+    ${finished ? `<section class="result"><span class="eyebrow">Результат спроби ${st.att}</span><span class="big">${fmtN(ok)}/${n}</span>
       <span>${ok === n ? "Бездоганно! +20 XP бонусу" : ok >= n * 0.7 ? "Добре! Перечитай пояснення до помилок." : "Перечитай частину й спробуй ще раз."}</span>
       <div class="row"><button class="btn ghost sm" type="button" data-act="retry" data-s="${s.id}" data-i="${i}">↻ Пройти ще раз</button>${s.open.length ? `<a class="btn violet sm" href="#/s/${s.id}/open">Відкриті питання</a>` : ""}</div></section>` : ""}
     <div class="pager"><a class="btn ghost" href="${i > 0 ? `#/s/${s.id}/p/${i - 1}` : `#/s/${s.id}`}">← ${i > 0 ? "Назад" : "До історії"}</a>
@@ -419,10 +422,21 @@ function vQ(s, i, qi, q, st) {
       if (q.t === "quote") ca = `Наприклад: <b>«${esc(q.a[0])}»</b>`;
       if (q.t === "order") ca = `Правильний порядок: ${q.items.map((t, k) => `${k + 1}) ${esc(t)}`).join("; ")}`;
     }
-    fb = `<div class="fb ${a.ok ? "ok" : "bad"}"><b>${a.ok ? "Правильно!" : "Не зовсім."}</b>${esc(q.e || "")}${ca ? `<div class="ca">${ca}</div>` : ""}</div>`;
+    const part = !a.ok && ptsOf(a) > 0;
+    const head = a.ok ? "Правильно!" : part ? `Частково: ${fmtN(ptsOf(a))} бала з 1.` : q.t === "multi" ? "0 балів." : "Не зовсім.";
+    const why = q.t === "multi" && !a.ok ? " За кожну правильну позначку бал додається, за кожну зайву — віднімається." : "";
+    fb = `<div class="fb ${a.ok ? "ok" : part ? "part" : "bad"}"><b>${head}${why}</b>${esc(q.e || "")}${ca ? `<div class="ca">${ca}</div>` : ""}</div>`;
   }
-  return `<article class="q ${locked ? (a.ok ? "ok" : "bad") : ""}" id="q-${qi}"><div class="top2"><span class="no">${qi + 1}</span><div style="display:grid;gap:4px"><span class="kind">${KIND[q.t] || ""}</span><span class="txt">${esc(q.q)}</span></div></div>
+  return `<article class="q ${locked ? (a.ok ? "ok" : ptsOf(a) > 0 ? "part" : "bad") : ""}" id="q-${qi}"><div class="top2"><span class="no">${qi + 1}</span><div style="display:grid;gap:4px"><span class="kind">${KIND[q.t] || ""}</span><span class="txt">${esc(q.q)}</span></div></div>
     ${body}${locked ? fb : `<div><button class="btn sm" type="button" data-act="check" data-q="${id}" ${ready ? "" : "disabled"}>Перевірити</button></div>`}</article>`;
+}
+// Частковий бал для «кілька варіантів»: частка вгаданих правильних мінус частка обраних хибних.
+// Якщо обрати все, штраф за хибні з'їдає весь бал → 0.
+function pointsFor(q, v) {
+  if (q.t !== "multi") return isRight(q, v) ? 1 : 0;
+  const k = q.a.length, m = q.o.length - k;
+  const good = v.filter(x => q.a.includes(x)).length, bad = v.length - good;
+  return Math.max(0, r1(good / k - (m ? bad / m : 0)));
 }
 function isRight(q, v) {
   switch (q.t) {
@@ -441,9 +455,9 @@ function onCheck(qid) {
   const st = getPart(p, s, i);
   if (st.ans[qi]) return;
   const v = DRAFT[qid];
-  const ok = isRight(q, v);
+  const pts = pointsFor(q, v), ok = pts === 1;
   if (!st.t0) st.t0 = Date.now();
-  st.ans[qi] = { v, ok };
+  st.ans[qi] = { v, ok, pts };
   delete DRAFT[qid];
   p.run = ok ? (p.run || 0) + 1 : 0; p.runBest = Math.max(p.runBest || 0, p.run);
   const n = s.parts[i].q.length;
@@ -454,7 +468,7 @@ function onCheck(qid) {
     const min = Math.max(1, Math.round((Date.now() - st.t0) / 60000));
     st.hist.push({ d: Date.now(), s: score, n, att: st.att, min });
     p.outbox.push({ type: "result", t: Date.now(), story: s.title, part: i + 1, partTitle: s.parts[i].title, att: st.att, score, n, min });
-    toast(score === n ? `Бездоганно: ${score}/${n}!` : `Частину пройдено: ${score}/${n}`);
+    toast(score === n ? `Бездоганно: ${score}/${n}!` : `Частину пройдено: ${fmtN(score)}/${n}`);
   }
   touch(p);
   const y = window.scrollY; render(); window.scrollTo(0, y);
@@ -531,7 +545,7 @@ function vMe() {
     <div class="achs">${ACH.map(([id, ic, t, d]) => `<div class="ach ${p.ach[id] ? "" : "off"}"><span class="ic">${ic}</span><b>${esc(t)}</b><small>${esc(d)}</small>${p.ach[id] ? `<small class="mono">${new Date(p.ach[id]).toLocaleDateString("uk-UA")}</small>` : ""}</div>`).join("")}</div>
     <div class="sec-h"><h2>Прогрес за історіями</h2></div>
     <section class="panel"><table class="table"><thead><tr><th>Історія</th><th class="r">Тести</th><th class="r">Відкриті</th><th class="r">%</th></tr></thead>
-    <tbody>${STORIES.map(s => { const ss = c.per[s.id]; return `<tr><td><a href="#/s/${s.id}">${esc(s.title)}</a></td><td class="r">${ss.best}/${ss.total}</td><td class="r">${ss.openGood}/${s.open.length}</td><td class="r">${ss.pct}</td></tr>`; }).join("")}</tbody></table></section>
+    <tbody>${STORIES.map(s => { const ss = c.per[s.id]; return `<tr><td><a href="#/s/${s.id}">${esc(s.title)}</a></td><td class="r">${fmtN(ss.best)}/${ss.total}</td><td class="r">${ss.openGood}/${s.open.length}</td><td class="r">${ss.pct}</td></tr>`; }).join("")}</tbody></table></section>
     <section class="panel"><div class="sec-h"><h2>Рівні</h2></div><table class="table"><tbody>${LEVELS.map(([xp, n], k) => `<tr ${c.level.n === k + 1 ? 'style="font-weight:800"' : ""}><td>${k + 1}. ${esc(n)}</td><td class="r">${xp} XP</td></tr>`).join("")}</tbody></table>
     <p class="muted" style="font-size:13.5px">XP: 10 за кожну правильну відповідь (зараховується найкраща спроба частини), +20 за частину без помилок, до 30 за відкриту відповідь, +100 за завершену історію.</p></section>`;
 }
